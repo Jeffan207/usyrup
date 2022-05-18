@@ -1,0 +1,16 @@
+{
+    "name": "com.cannone.usyrup",
+    "version": "1.0.0",
+    "displayName": "USyrup",
+    "description": "A dependency injection framework for Unity",
+    "unity": "2021.2",
+    "unityRelease": "16f1",
+    "license": "MIT",
+    "keywords": [
+        "USyrup",
+        "Dependency Injection"
+    ],
+    "author": {
+        "name": "Eric Cannone"
+    }
+  }

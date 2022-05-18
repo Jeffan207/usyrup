@@ -1,0 +1,16 @@
+{
+    "name": "com.cannone.usyrup.Sample",
+    "rootNamespace": "",
+    "references": [
+        "GUID:593d2ec67f9d64419adab96e8e167499"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
