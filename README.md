@@ -1,3 +1,5 @@
+[![openupm](https://img.shields.io/npm/v/com.cannone.usyrup?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.cannone.usyrup/)
+
 # Introduction
 
 USyrup is a dependency injection framework designed for the Unity Game Engine. It's heavily inspired by Java's Guice/Dagger DI frameworks, co-opting similar such semantics from those libraries. The core problem that USyrup attempts to address is simplicity. Many dependency injection frameworks that currently exist are both incredibly feature rich and even more so complicated. USyrup's simplicity makes DI much more approachable and actually benefit a project instead of creating dependency confusion.
@@ -40,14 +42,18 @@ Custom Syrup Modules are written and are attached to a game object alongside a U
 
 # Installation
 
-TODO: How to Install!
+1. Install through OpenUPM: https://openupm.com/packages/com.cannone.usyrup/#close
+2. Through the Unity Package Manager directly:
+ - Add the package using the git URL of this repo: https://github.com/Jeffan207/usyrup.git
+ - Download the tarball from the [releases](https://github.com/Jeffan207/usyrup/releases) page and install through that.
+3. Unity Asset Store: ***COMING SOON***
 
 # Quick Start Guide
 
 1. In your MonoBehaviour where you want your dependencies injected, create a new `public void` method and annotate it with the `[Inject]` attribute. The parameters for the method will be the dependencies that USyrup will inject into the MonoBehaviour. An example such MonoBehaviour is shown below.
 
 ```c#
-public class Pancake : MonoBehaviour {
+public class Breakfast : MonoBehaviour {
 
     private Pancakes pancakes;
 
