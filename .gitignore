@@ -77,3 +77,4 @@ crashlytics-build.properties
 .vsconfig
 Sample/
 Sample.meta
+InitTestScene*

@@ -1,6 +1,6 @@
 {
     "name": "com.cannone.usyrup",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "displayName": "USyrup",
     "description": "A dependency injection framework for Unity",
     "unity": "2021.2",

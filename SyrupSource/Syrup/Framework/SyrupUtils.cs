@@ -18,6 +18,7 @@ namespace Syrup.Framework {
         /// Returns a list of MonoBehaviours in the provided scene that have an injectable
         /// entry point (currently only method injection). All MonoBehaviours are then added to the inputted list.
         /// </summary>
+        /// <param name="injectableMonoBehaviours">List to be populated with injectable MonoBehaviours</param>
         internal static void GetInjectableMonoBehaviours(Scene scene, List<InjectableMonoBehaviour> injectableMonoBehaviours) {
 
             //Unlike Zenject we inject our dependencies in Start so we can call GetRootGameObjects without worry
@@ -28,7 +29,6 @@ namespace Syrup.Framework {
                 }
             }
         }
-
 
         private static void GetInjectableMonoBehavioursUnderObject(
             GameObject gameObject, List<InjectableMonoBehaviour> injectableMonoBehaviours) {
@@ -64,7 +64,14 @@ namespace Syrup.Framework {
                 var monoBehaviour = monoBehaviours[i];
 
                 if (monoBehaviour != null && monoBehaviour.GetType() != null) {
-                    var injectableMethods = monoBehaviour.GetType().GetMethods()
+                    Type monoBehaviourType = monoBehaviour.GetType();
+                    if (monoBehaviourType.GetCustomAttribute<SceneInjection>() != null &&
+                        !monoBehaviourType.GetCustomAttribute<SceneInjection>().enabled) {
+                        //This MonoBehaviour disabled scene injection, so skip injecting it.
+                        continue;
+                    }
+
+                    var injectableMethods = monoBehaviourType.GetMethods()
                         .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
                     MethodInfo[] methods = injectableMethods.Reverse().ToArray();
                     if (methods.Length > 0) {
@@ -72,6 +79,7 @@ namespace Syrup.Framework {
                     }
                 }
             }
+
         }
     }
 }

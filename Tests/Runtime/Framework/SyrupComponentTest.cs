@@ -155,4 +155,40 @@ public class SyrupComponentTest {
         UnityEngine.Object.Destroy(sceneComponent);
     }
 
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_InjectsWhenSceneInjectionIsExplicitlyEnabled() {
+        GameObject toast = new GameObject();
+        toast.AddComponent<Toast>();
+
+        GameObject sceneComponent = new GameObject();
+        sceneComponent.AddComponent<SyrupComponent>();
+
+        yield return null;
+
+        Butter butter = toast.GetComponent<Toast>().butter;
+
+        Assert.NotNull(butter);
+
+        UnityEngine.Object.Destroy(toast);
+        UnityEngine.Object.Destroy(sceneComponent);
+    }
+
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_DoesNotInjectWhenSceneInjectionIsDisabled() {
+        GameObject bagel = new GameObject();
+        bagel.AddComponent<Bagel>();
+
+        GameObject sceneComponent = new GameObject();
+        sceneComponent.AddComponent<SyrupComponent>();
+
+        yield return null;
+
+        Butter butter = bagel.GetComponent<Bagel>().butter;
+
+        Assert.Null(butter);
+
+        UnityEngine.Object.Destroy(bagel);
+        UnityEngine.Object.Destroy(sceneComponent);
+    }
+
 }

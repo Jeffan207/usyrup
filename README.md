@@ -29,6 +29,7 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
             - [Constructor Injection Post-Step](#constructor-injection-post-step)
             - [Method Injection Heirarchies](#method-injection-heirarchies)
     - [Singleton (Attribute)](#singleton-attribute)
+    - [SceneInjection (Attribute)](#sceneinjection-attribute)
     - [Syrup Component](#syrup-component)
     - [Syrup Injector](#syrup-injector)
 - [Where is Field Injection?](#where-is-field-injection)
@@ -342,6 +343,29 @@ public class Butter {
 ```
 
 The above example shows both uses of the `[Singleton]` attribute. On the provider, only a single `TastySyrup` will only be created from that provider method and will be re-used across the dependencies that require it. On the `Butter` class we annotate the class itself with the `[Singleton]` attribute to denote that this class should only ever be constructor injected once.
+
+## SceneInjection (Attribute)
+
+The SceneInjection attributes controls whether or not the object will injected when the scene is loaded. By default, all MonoBehaviours are treated as if SceneInjection.enabled is set to true, even if the SceneInjection attribute isn't declared on the MonoBehaviour itself. When the SceneInjection is provided with enabled set to false, then USyrup will skip injecting the MonoBehaviour when the scene is loaded. So outside of being more explicit, the only time you would want to use this attribute is if you wanted to conditionally disable scene injection. You would generally do this for objects that are created at runtime or if you want to rely on on-demand style injection instead.
+
+```c#
+[SceneInjection(enabled: false)]
+public class Food : MonoBehaviour {
+
+    protected Brand brand;
+
+    private void Start() {
+        this.brand = SyrupComponent.SyrupInjector.Get<Brand>();
+    }
+
+    [Inject]
+    public void InitFood(Brand brand) {
+        this.brand = brand;
+    }
+}
+```
+
+In the above example, the `Food` object has an injectable `InitFood()` method. However, we have explicitly disabled scene injection with the attribute `[SceneInjection(enabled: false)]`. So instead the object fulfills it's dependency by usng `SyrupInjector.Get<>()`.
 
 ## Syrup Component
 
