@@ -32,6 +32,7 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
     - [SceneInjection (Attribute)](#sceneinjection-attribute)
     - [Syrup Component](#syrup-component)
     - [Syrup Injector](#syrup-injector)
+        - [On-Demand Injection](#on-demand-injection)
 - [Where is Field Injection?](#where-is-field-injection)
 - [Where is 'X' dependency injection framework feature?](#where-is-x-dependency-injection-framework-feature)
 - [Why the name "Syrup"?](#why-the-name-syrup)
@@ -396,7 +397,7 @@ Milk milk = SyrupComponent.SyrupInjector.GetInstance<>("LactoseFreeMilk")l
 
 ### On-Demand Injection
 
-For convenience, The Syrup Injector can also be used to inject any object on-demand using the `SyrupInjector.Inject(T objectToInject)` API. This is useful for scenarios where the object to be injected is created at runtime and is not available to be injected during the Syrup Component's initial inject on scene load step. It also means for this scenario you can use normal `[Inject]` semantics instead of needing to rely on `SyrupInjector.GetInstance()` calls to fulfill your objects dependencies.
+For convenience, the Syrup Injector can also be used to inject any object on-demand using the `SyrupInjector.Inject(T objectToInject)` API. This is useful for scenarios where the object to be injected is created at runtime and is not available to be injected during the Syrup Component's initial inject on scene load step. It also means for this scenario you can use normal `[Inject]` semantics instead of needing to rely on `SyrupInjector.GetInstance()` calls to fulfill your objects dependencies.
 
 ```c#
 //This is an example WITHOUT using on-demand injection
