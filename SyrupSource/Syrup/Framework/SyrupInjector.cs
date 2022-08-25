@@ -343,6 +343,24 @@ namespace Syrup.Framework {
             return (T)dependency;
         }
 
+        /// <summary>
+        /// Injects dependencies into the provided object by invoking any inject related methods.
+        /// </summary>        
+        /// <param name="objectToInject">The object to be injected</param>
+        public void Inject<T>(T objectToInject) {
+            MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(objectToInject.GetType());
+            InjectObject(objectToInject, injectableMethods);
+        }
+
+        private void InjectObject<T>(T objectToInject, MethodInfo[] injectableMethods) {
+            //We're making the assumption that the injectable methods are ordered from base class
+            //to deriving class (they should be) but we're assuming it too.
+            foreach (MethodInfo injectableMethod in injectableMethods) {
+                object[] parameters = GetMethodParameters(injectableMethod);
+                injectableMethod.Invoke(objectToInject, parameters);
+            }
+        }
+
 
         // BEGIN ALL UNITY SPECIFIC INJECTION PATTERNS
 
@@ -379,12 +397,7 @@ namespace Syrup.Framework {
 
         private void InjectGameObjects(List<InjectableMonoBehaviour> injectableMonoBehaviours) {
             foreach (InjectableMonoBehaviour injectableMb in injectableMonoBehaviours) {
-                //We're making the assumption that the injectable methods are ordered from base class
-                //to deriving class (they should be) but we're assuming it too.
-                foreach (MethodInfo injectableMethod in injectableMb.methods) {
-                    object[] parameters = GetMethodParameters(injectableMethod);
-                    injectableMethod.Invoke(injectableMb.mb, parameters);
-                }
+                InjectObject(injectableMb.mb, injectableMb.methods);
             }
         }
     }

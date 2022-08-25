@@ -209,4 +209,30 @@ public class SyrupComponentTest {
         UnityEngine.Object.Destroy(toast);        
     }
 
+    /// <summary>
+    /// This test probably doesn't belong here.
+    /// It tests that a MonoBehaviour's Start() can call SyrupComponent.SyrupInjector.Inject(this).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_WithOnDemandInjection() {
+        //Create the SyrupComponent first and wait a frame that way it will go through its injection loop
+        GameObject sceneComponent = new GameObject();
+        sceneComponent.AddComponent<SyrupComponent>();
+        yield return null;
+
+        //The AutoToast will be injected via on-demand injection
+        GameObject autoToast = new GameObject();
+        autoToast.AddComponent<AutoToast>();
+
+        //Wait a frame so it goes through its Start() method.
+        yield return null;
+
+        AutoToast autoToastComponent = autoToast.GetComponent<AutoToast>();
+
+        Assert.NotNull(autoToastComponent.butter);
+
+        UnityEngine.Object.Destroy(autoToast);
+        UnityEngine.Object.Destroy(sceneComponent);
+    }
+
 }

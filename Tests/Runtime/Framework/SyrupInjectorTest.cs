@@ -294,4 +294,34 @@ public class SyrupInjectorTest {
         Assert.NotNull(americanBuffet.tastySyrup);
         Assert.NotNull(americanBuffet.egg);
     }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectOnDemand() {
+        SyrupInjector syrupInjector = new SyrupInjector();
+
+        EnglishMuffin englishMuffin = new();
+
+        Assert.Null(englishMuffin.butter);
+
+        syrupInjector.Inject(englishMuffin);
+
+        Assert.NotNull(englishMuffin.butter);
+    }
+
+    [Test]
+    public void TestSyrupInjector_OnDemandInjectionWithInheritedInjects() {
+        SyrupInjector syrupInjector = new SyrupInjector(
+            new TwoDependentProvidersModule(),
+            new SingleProviderModule(),
+            new ProvidedEggModule());
+
+        AmericanBuffet americanBuffet = new();
+        Assert.Null(americanBuffet.pancake);
+        Assert.Null(americanBuffet.tastySyrup);
+        Assert.Null(americanBuffet.egg);
+        syrupInjector.Inject(americanBuffet);
+        Assert.NotNull(americanBuffet.pancake);
+        Assert.NotNull(americanBuffet.tastySyrup);
+        Assert.NotNull(americanBuffet.egg);
+    }
 }

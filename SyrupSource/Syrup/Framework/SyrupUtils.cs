@@ -71,15 +71,19 @@ namespace Syrup.Framework {
                         continue;
                     }
 
-                    var injectableMethods = monoBehaviourType.GetMethods()
-                        .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
-                    MethodInfo[] methods = injectableMethods.Reverse().ToArray();
-                    if (methods.Length > 0) {
-                        injectableMonoBehaviours.Add(new InjectableMonoBehaviour(monoBehaviour, methods));
+                    var injectableMethods = GetInjectableMethodsFromType(monoBehaviourType);
+                    if (injectableMethods.Length > 0) {
+                        injectableMonoBehaviours.Add(new InjectableMonoBehaviour(monoBehaviour, injectableMethods));
                     }
                 }
             }
 
-        }
+        }     
+
+        public static MethodInfo[] GetInjectableMethodsFromType(Type t) {
+            var injectableMethods = t.GetMethods()
+                            .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
+            return injectableMethods.Reverse().ToArray();
+        }    
     }
 }

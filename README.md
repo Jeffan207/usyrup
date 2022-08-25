@@ -352,7 +352,7 @@ The SceneInjection attributes controls whether or not the object will injected w
 [SceneInjection(enabled: false)]
 public class Food : MonoBehaviour {
 
-    protected Brand brand;
+    private Brand brand;
 
     private void Start() {
         this.brand = SyrupComponent.SyrupInjector.Get<Brand>();
@@ -383,7 +383,7 @@ The Syrup Component itself has the following tunable parameters:
 
 The Syrup Injector lives within the Syrup Component. It is responsible for building the dependency graph and fetching/caching any dependencies as they are needed. It is created on first scene load and is destroyed in `OnDestroy()` when the scene transitions (meaning your dependencies are recreated between scenes). The Syrup Injector is a singleton and any new Syrup Components and Modules added to your scene will be added directly to the currently active Syrup Injector.
 
-If you need to, you can fetch dependencies directly from the Syrup Injector on your Syrup Component via static calls to the `SyrupInjector` property in the `SyrupComponent` class. You can use the Syrup Injector to fetch both named and unnamed dependencies using the `GetInstance<>()` and `GetInstance<>(string name)` methods respectively.
+If you need to, you can fetch dependencies directly from the Syrup Injector on your Syrup Component via static calls to the `SyrupInjector` property in the `SyrupComponent` class. You can use the Syrup Injector to fetch both unnamed and named dependencies using the `GetInstance<>()` and `GetInstance<>(string name)` methods respectively.
 
 ```c#
 //Get's an instance of the TastySyrup object supplied by the Syrup Injector.
@@ -394,13 +394,54 @@ Milk milk = SyrupComponent.SyrupInjector.GetInstance<>("LactoseFreeMilk")l
 
 ```
 
-### Where is Field Injection?
+### On-Demand Injection
+
+For convenience, The Syrup Injector can also be used to inject any object on-demand using the `SyrupInjector.Inject(T objectToInject)` API. This is useful for scenarios where the object to be injected is created at runtime and is not available to be injected during the Syrup Component's initial inject on scene load step. It also means for this scenario you can use normal `[Inject]` semantics instead of needing to rely on `SyrupInjector.GetInstance()` calls to fulfill your objects dependencies.
+
+```c#
+//This is an example WITHOUT using on-demand injection
+public class Breakfast : MonoBehaviour {
+
+    private Syrup syrup;
+    private Pancakes pancakes;
+    private Bacon bacon;
+
+    private void Start() {
+        this.syrup = SyrupComponent.SyrupInjector.Get<Syrup>();
+        this.pancakes = SyrupComponent.SyrupInjector.Get<Pancakes>();
+        this.bacon = SyrupComponent.SyrupInjector.Get<Bacon>();
+    }
+}
+
+//This is an example WITH using on-demand injection
+public class Breakfast : MonoBehaviour {
+
+    private Syrup syrup;
+    private Pancakes pancakes;
+    private Bacon bacon;
+
+    private void Start() {
+        SyrupComponent.SyrupInjector.Inject(this);
+    }
+
+    [Inject]
+    public void InitBreakfast(Syrup syrup, Pancakes pancakes, Bacon bacon) {
+        this.syrup = syrup;
+        this.pancakes = pancakes;
+        this.bacon = bacon;
+    }
+}
+```
+
+The above examples show the `Breakfast` class implemented in two ways. The first way using `SyrupInjector.GetInstance()` to fulfill the `Breakfast` class' dependencies and a second way using `SyrupInjector.Inject(this)`. Using the second method, the SyrupInjector will call back into the `Breakfast` class and invoke it's injectable `InitBreakfast()` method with the dependencies it needs to provide. As can be seen, one way is not strictly better than the other as both can be used to accomplish the same goal. 
+
+## Where is Field Injection?
 
 Currently, field injection is not supported. The use-cases for field injection, particularly for MonoBehaviours, can be covered by method injection.
 
 If you have a use-case that contradicts this, feel free to make a request!
 
-### Where is 'X' dependency injection framework feature?
+## Where is 'X' dependency injection framework feature?
 
 USyrup is meant to be *SIMPLE*! In the interest of simplicity (and time) only the most basic dependency injection features were implemented. This is a very opinonated viewpoint as I, (the author), only ever really use these features anyway.
 
@@ -408,7 +449,7 @@ If you feel strongly the framework can really benefit from having 'X' feature, f
 
 My personal take has always been however, "just because a framework/tool provides a number of features doesn't mean you need to or should use *ALL* of them!"
 
-### Why the name "Syrup"?
+## Why the name "Syrup"?
 
 Three reasons:
 
