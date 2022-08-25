@@ -376,6 +376,8 @@ The Syrup Component itself has the following tunable parameters:
 | Parameter   | Required    | Type | Description
 | ----------- | ----------- | ----------- | --|
 | Scenes To Inject     | False   | `List<String>`  | A list of scenes that this Syrup Component is responsible for injecting. If not set, all game objects in all loaded scenes will be injected. Set this if you plan to load your scenes additively so you don't double inject your existing objects. |
+| Use Scene Injection  | True   | `bool`  | Flag that indicates whether or not the Syrup Component should inject objects when the scene loads. By default this is set to true. This flag is useful if you don't want to use scene injection at all and don't want to add the `[SceneInjection(enabled: false)]` attribute to every object |
+| Verbose Logging  | True   | `bool`  | Flag that controls how verbose the console logging by should be for the Syrup Component and the Syrup Injector created by the component. By default this is set to false. |
 
 ## Syrup Injector
 

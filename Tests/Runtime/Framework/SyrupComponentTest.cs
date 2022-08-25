@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 public class SyrupComponentTest {
 
     private static string EXAMPLE_SCENE_2 = "ExampleScene2";
+    private static string EXAMPLE_SCENE_3 = "ExampleScene3";
 
     [UnitySetUp]
     public IEnumerator UnitySetUp() {
@@ -174,7 +175,7 @@ public class SyrupComponentTest {
     }
 
     [UnityTest]
-    public IEnumerator TestSyrupComponent_DoesNotInjectWhenSceneInjectionIsDisabled() {
+    public IEnumerator TestSyrupComponent_DoesNotInjectWhenSceneInjectionIsDisabledOnTheInjectableObject() {
         GameObject bagel = new GameObject();
         bagel.AddComponent<Bagel>();
 
@@ -189,6 +190,23 @@ public class SyrupComponentTest {
 
         UnityEngine.Object.Destroy(bagel);
         UnityEngine.Object.Destroy(sceneComponent);
+    }
+
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_DoesNotInjectWhenSceneInjectionIsDisabledOnTheComponent() {
+        GameObject toast = new GameObject();
+        toast.AddComponent<Toast>(); //SceneInjection is explicitly enabled on Toast
+
+        //The SyrupComponent in ExampleScene3 is setup to have scene injection disabled
+        SceneManager.LoadScene(EXAMPLE_SCENE_3, LoadSceneMode.Additive);
+
+        yield return null;
+
+        Butter butter = toast.GetComponent<Toast>().butter;
+
+        Assert.Null(butter);
+
+        UnityEngine.Object.Destroy(toast);        
     }
 
 }

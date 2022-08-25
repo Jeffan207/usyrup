@@ -19,6 +19,15 @@ public class SyrupComponent : MonoBehaviour {
     "own SyrupComponents as it will prevent the components from reinjecting already injected objects!")]
     private string[] scenesToInject;
 
+    [SerializeField]
+    [Tooltip("When enabled this componenet will inject scenes when the componenet is loaded. If this is disabled " +
+        "then objects in the scene will need to rely on the SyrupInjector directly to fulfill their dependencies.")]
+    private bool useSceneInjection = true;
+
+    [SerializeField]
+    [Tooltip("Enable/disables verbose console logging for both the SyrupComponent and SyrupInjector.")]
+    private bool verboseLogging = false;
+
     private void Awake() {
         ISyrupModule[] syrupModules = GetComponents<ISyrupModule>();
 
@@ -32,6 +41,13 @@ public class SyrupComponent : MonoBehaviour {
     private void Start() {
         if (SyrupInjector == null) {
             Debug.LogWarning("SyrupInjector has not been initialized, was it cleared between frames?");
+            return;
+        }
+
+        if (!useSceneInjection) {
+            if (verboseLogging) {
+                Debug.Log("Scene injection has been disabled, skipping injection...");
+            }
             return;
         }
 
