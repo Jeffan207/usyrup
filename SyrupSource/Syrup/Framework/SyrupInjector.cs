@@ -24,10 +24,22 @@ namespace Syrup.Framework {
         //Given a param, map to all types that need it
         private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies;
 
+        private bool verboseLogging = false;
+
         //Dependencies that have been fully constructed
-        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;
+        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;        
 
         public SyrupInjector(params ISyrupModule[] modules) {            
+            dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
+            paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
+            fulfilledDependencies = new Dictionary<NamedDependency, object>();
+
+            AddSyrupModules(modules);
+        }
+
+        public SyrupInjector(SyrupInjectorOptions syrupInjectorOptions, params ISyrupModule[] modules) {
+            verboseLogging = syrupInjectorOptions.VerboseLogging;
+
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
             paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
             fulfilledDependencies = new Dictionary<NamedDependency, object>();
@@ -214,9 +226,16 @@ namespace Syrup.Framework {
 
             DependencyInfo dependencyInfo = dependencySources[namedDependency];
             if (dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(namedDependency)) {
+                if (verboseLogging) {
+                    Debug.Log(string.Format("Provide singleton: {0}", namedDependency.ToString()));
+                }                
                 return fulfilledDependencies[namedDependency];
             }
-    
+
+            if (verboseLogging) {
+                Debug.Log(string.Format("Constructing object: {0}", namedDependency.ToString()));
+            }            
+
             object dependency;
             if (dependencyInfo.DependencySource == DependencySource.PROVIDER) {
                 MethodInfo method = dependencyInfo.ProviderMethod;

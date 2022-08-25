@@ -34,7 +34,9 @@ public class SyrupComponent : MonoBehaviour {
         if (SyrupInjector != null) {
             SyrupInjector.AddSyrupModules(syrupModules);
         } else {
-            SyrupInjector = new SyrupInjector(syrupModules);
+            SyrupInjectorOptions syrupInjectorOptions = new();
+            syrupInjectorOptions.VerboseLogging = verboseLogging;
+            SyrupInjector = new SyrupInjector(syrupInjectorOptions, syrupModules);
         }
     }
 
