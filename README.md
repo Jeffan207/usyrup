@@ -42,9 +42,9 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
 
 # How It Works
 
-Much like Guice, USyrup is a runtime dependency injection framework. It uses modules (called "Syrup Modules") for explicitly provided dependencies and constructor injection for the rest. MonoBehaviours can be injected like any other object through the use of method injection, an approach similar to how Zenject handles injection. 
+USyrup is a runtime dependency injection framework, much like Guice. It uses modules (called "Syrup Modules") for explicitly provided dependencies and constructor injection for the rest. MonoBehaviours can be injected like any other object through the use of method injection, an approach similar to how Zenject handles injection. 
 
-Custom Syrup Modules are written and are attached to a game object alongside a USyrup provided Syrup Component, which reads in the modules and uses them to construct your dependency graph. The graph is then validated to ensure all provided dependencies can be fulfilled and then injects the dependencies into each injectable MonoBehaviour in the scene.
+Custom Syrup Modules are written and attached to a game object alongside a USyrup provided Syrup Component, which reads in the modules and uses them to construct your dependency graph. The graph is then validated to ensure all provided dependencies can be fulfilled and then injects the dependencies into each injectable MonoBehaviour in the scene.
 
 # Installation
 
@@ -435,6 +435,22 @@ public class Breakfast : MonoBehaviour {
 ```
 
 The above examples show the `Breakfast` class implemented in two ways. The first way using `SyrupInjector.GetInstance()` to fulfill the `Breakfast` class' dependencies and a second way using `SyrupInjector.Inject(this)`. Using the second method, the SyrupInjector will call back into the `Breakfast` class and invoke it's injectable `InitBreakfast()` method with the dependencies it needs to provide. As can be seen, one way is not strictly better than the other as both can be used to accomplish the same goal. 
+
+## Caveats
+
+USyrup builds and injects the dependency graph during the `Awake()` step. This means when the scene loads you shouldn't expect any dependencies to be available to use in your MonoBehaviours until at least `Start()`. This is true for both scene injection and on-demand injection that access the Syrup Injector provided through the Syrup Component.
+
+If you build your own Syrup Injector outside the Syrup Component context via:
+
+```c#
+SyrupInjector syrupInjector = new SyrupInjector(
+    new SomeModule1(),
+    new SomeModule2(),
+    ...
+);
+```
+
+Then this restriction does not apply (but be warned, this isn't as efficient if you're still relying on the Syrup Component elsewhere in your scene).
 
 ## Where is Field Injection?
 
