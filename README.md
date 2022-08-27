@@ -33,6 +33,7 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
     - [Syrup Component](#syrup-component)
     - [Syrup Injector](#syrup-injector)
         - [On-Demand Injection](#on-demand-injection)
+    - [Caveats](#caveats)
 - [Where is Field Injection?](#where-is-field-injection)
 - [Where is 'X' dependency injection framework feature?](#where-is-x-dependency-injection-framework-feature)
 - [Why the name "Syrup"?](#why-the-name-syrup)
