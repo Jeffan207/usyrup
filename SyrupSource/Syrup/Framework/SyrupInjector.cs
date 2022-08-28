@@ -113,9 +113,12 @@ namespace Syrup.Framework {
                     uniqueParameters.Add(GetNamedDependencyForParam(param));
                 }
 
-                var injectableMethods = constructor.DeclaringType.GetMethods()
-                    .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
+                var injectableFields = SyrupUtils.GetInjectableFieldsFromType(constructor.DeclaringType);
+                foreach (FieldInfo injectableField in injectableFields) {
+                    uniqueParameters.Add(GetNamedDependencyForField(injectableField));
+                }
 
+                var injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructor.DeclaringType);               
                 foreach (MethodInfo injectableMethod in injectableMethods) {
                     foreach (ParameterInfo param in injectableMethod.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -129,7 +132,8 @@ namespace Syrup.Framework {
                     Constructor = constructor,
                     Type = constructor.DeclaringType,
                     IsSingleton = isSingleton,
-                    InjectableMethods = injectableMethods.Reverse().ToArray()
+                    InjectableMethods = injectableMethods,
+                    InjectableFields = injectableFields
                 };
 
                 dependencySources[namedDependency] = dependencyInfo;
@@ -218,6 +222,12 @@ namespace Syrup.Framework {
             return new NamedDependency(name, param.ParameterType);
         }
 
+        private NamedDependency GetNamedDependencyForField(FieldInfo field) {
+            Named dependencyName = field.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
+            return new NamedDependency(name, field.FieldType);
+        }
+
         private object BuildDependency(NamedDependency namedDependency) {
 
             if (!dependencySources.ContainsKey(namedDependency)) {
@@ -245,10 +255,7 @@ namespace Syrup.Framework {
                 ConstructorInfo constructor = dependencyInfo.Constructor;
                 object[] parameters = GetConstructorParameters(constructor);
                 dependency = constructor.Invoke(parameters);
-                foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
-                    object[] injectableMethodParameters = GetMethodParameters(injectableMethod);
-                    injectableMethod.Invoke(dependency, injectableMethodParameters);
-                }
+                InjectObject(dependency, dependencyInfo.InjectableFields, dependencyInfo.InjectableMethods);
             } else {
                 throw new UnknownDependencySourceException(
                     string.Format("Unknown DependencySource: '{0}', cannot fulfill dependency!", dependencyInfo.DependencySource));
@@ -367,15 +374,27 @@ namespace Syrup.Framework {
         /// </summary>        
         /// <param name="objectToInject">The object to be injected</param>
         public void Inject<T>(T objectToInject) {
+            FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(objectToInject.GetType());
             MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(objectToInject.GetType());
-            InjectObject(objectToInject, injectableMethods);
+            InjectObject(objectToInject, injectableFields, injectableMethods);
         }
 
-        private void InjectObject<T>(T objectToInject, MethodInfo[] injectableMethods) {
-            //We're making the assumption that the injectable methods are ordered from base class
+        private void InjectObject<T>(T objectToInject, FieldInfo[] injectableFields, MethodInfo[] injectableMethods) {
+            //We're making the assumption that the injectable fields/methods are ordered from base class
             //to deriving class (they should be) but we're assuming it too.
+            foreach (FieldInfo injectableField in injectableFields) {
+                if (verboseLogging) {
+                    Debug.Log(string.Format("Injecting (Field) [{0}] into [{1}]", injectableField.FieldType, objectToInject.GetType()));
+                }
+                injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForField(injectableField)));
+            }
+
             foreach (MethodInfo injectableMethod in injectableMethods) {
                 object[] parameters = GetMethodParameters(injectableMethod);
+                if (verboseLogging) {                    
+                    string methodParams = string.Join(",", parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
+                    Debug.Log(string.Format("Injecting (Method Params) [{0}] into [{1}]", methodParams, objectToInject.GetType()));
+                }
                 injectableMethod.Invoke(objectToInject, parameters);
             }
         }
@@ -416,7 +435,7 @@ namespace Syrup.Framework {
 
         private void InjectGameObjects(List<InjectableMonoBehaviour> injectableMonoBehaviours) {
             foreach (InjectableMonoBehaviour injectableMb in injectableMonoBehaviours) {
-                InjectObject(injectableMb.mb, injectableMb.methods);
+                InjectObject(injectableMb.mb, injectableMb.fields, injectableMb.methods);
             }
         }
     }

@@ -24,10 +24,10 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
     - [Named (Attribute))](#named-attribute)
     - [Inject (Attribute)](#inject-attribute)
         - [Constructor Injection](#constructor-injection)
-        - [Method Injection](#method-injection)
+        - [Field and Method Injection](#field-and-method-injection)
             - [Injecting MonoBehaviours](#injecting-monobehaviours)
             - [Constructor Injection Post-Step](#constructor-injection-post-step)
-            - [Method Injection Heirarchies](#method-injection-heirarchies)
+            - [Injection Heirarchies](#injection-heirarchies)
     - [Singleton (Attribute)](#singleton-attribute)
     - [SceneInjection (Attribute)](#sceneinjection-attribute)
     - [Syrup Component](#syrup-component)
@@ -57,7 +57,7 @@ Custom Syrup Modules are written and attached to a game object alongside a USyru
 
 # Quick Start Guide
 
-1. In your MonoBehaviour where you want your dependencies injected, create a new `public void` method and annotate it with the `[Inject]` attribute. The parameters for the method will be the dependencies that USyrup will inject into the MonoBehaviour. An example such MonoBehaviour is shown below.
+1. In your MonoBehaviour where you want your dependencies injected, create a new `void` method and annotate it with the `[Inject]` attribute. The parameters for the method will be the dependencies that USyrup will inject into the MonoBehaviour. An example such MonoBehaviour is shown below.
 
 ```c#
 public class Breakfast : MonoBehaviour {
@@ -246,19 +246,22 @@ The above is a slightly modified version of our previous example. In this versio
 
 *(Author's note: if you find constructor injection confusing still, you're not alone! In my experience the hardest thing for developers new to DI to grasp is how to trace dependencies provided by constructor injection. As your project grows, you might have constructor injected dependencies accept parameters from other constructor injected dependencies and maybe even some provider methods too...it can really get out of hand quickly. For this reason alone, I actually prefer to explicitly provide all my dependencies in the modules themselves via providers. That way if I want to trace how a dependency is built I just look at the module and find the associated provider(s) for it and its required types. And this is not just true for USyrup, but also for other frameworks like Dagger/Guice. I must warn you though, other engineers don't share my enthusiasm for modules as I do)*
 
-### Method Injection
+### Field and Method Injection
 
-Method injection is similar to constructor injection except that return types of injected methods in USyrup are not fed back into USyrup's dependency graph. What this means is that you can use method injection to feed dependencies into an object *only*. It's a one way relationship! 
+Field and method injection (also known as members injection) are similar to constructor injection except that return types of injected fields/methods in USyrup are not fed back into USyrup's dependency graph. What this means is that you can use members injection to feed dependencies into an object *only*. It's a one way relationship! 
 
-Method injection is used in two cases in USyrup:
+Members injection is used in two cases in USyrup:
 
-1. **As the sole way to inject dependencies into MonoBehaviours**.
-2. As a post-step to constructor injection. After an object is constructor injected, any injectable methods on the object will also be called.
+1. As a way to inject dependencies into MonoBehaviours.
+2. As a post-step to constructor injection. After an object is constructor injected, any injectable members on the object will also be called.
 
-#### <u>Injecting MonoBehaviours</u>
+#### Injecting MonoBehaviours
 
 ```c#
 public class Pancakes : MonoBehaviour {
+
+    [Inject]
+    private Butter butter;
 
     private TastySyrup tastySyrup;
 
@@ -274,34 +277,42 @@ public class Pancakes : MonoBehaviour {
 }
 ```
 
-Above is another pancake themed example illustrating how to inject dependencies into a MonoBehaviour. MonoBehaviour's cannot be instantiated via a traditional constructor, so instead we use an `[Inject]` annotated method inside the behaviour to pass our dependencies through. Our MonoBehaviour `Pancakes` (naturally), has a single `[Inject]` annotated method `Init()` which takes in a `TastySyrup` object. USyrup will use this method at runtime to inject all `Pancakes` MonoBehaviours in our scene with `TastySyrup` objects. 
+Above is another pancake themed example illustrating how to inject dependencies into a MonoBehaviour. MonoBehaviour's cannot be instantiated via a traditional constructor, so instead we use both an `[Inject]` annotated method and field inside the behaviour to pass our dependencies through. Our MonoBehaviour `Pancakes` (naturally), has a single `[Inject]` annotated field of type `Butter` and a single `[Inject]` annotated method `Init()` which takes in a `TastySyrup` object. USyrup will inject fields first followed by methods when performing members injection on an object. In layman's terms, USyrup will inject all `Pancakes` MonoBehaviours in our scene with `Butter` and `TastySyrup` objects based on the `[Inject]` annotated members in the MonoBehaviour. 
 
-USyrup automatically detects all `[Inject]` annotated methods attached to MonoBehaviours within the scene that need to be injected. So as long as you have your Syrup Component/Modules setup, you just need to create a single `[Inject]` method on your MonoBehaviour and you're good to go!
+USyrup automatically detects all `[Inject]` annotated fields/methods attached to MonoBehaviours within the scene that need to be injected. So as long as you have your Syrup Component/Modules setup, you just need to create a single `[Inject]` method on your MonoBehaviour and you're good to go!
 
-#### <u>Constructor Injection Post-Step</u>
+#### Constructor Injection Post-Step
 
-Sometimes, you might want to do some additional work to finish building an object outside of constructor injection. You can do this by also supplying an `[Inject]` annotated method inside the class in addition to an `[Inject]` annotated constructor. USyrup will always invoke the `[Inject]` annotated constructor first, followed by invoking the `[Inject]` annotated method(s).
+Sometimes, you might want to do some additional work to finish building an object outside of constructor injection. You can do this by also supplying an `[Inject]` annotated field/method inside the class in addition to an `[Inject]` annotated constructor. USyrup will always invoke the `[Inject]` annotated constructor first, followed by injecting the `[Inject]` annotated member(s).
 
 ```c#
 public class Pancake {
+
+    //Second, the egg is injected
+    [Inject]
+    public Egg egg
+
     [Inject]
     public Pancake(Butter butter) {
-        //First this constructor is called
+        //First, this constructor is called
     }
 
     [Inject]
     public void Init(TastySyrup tastySyrup) {
-        //Followed by this injectable method
+        //Third, this injectable method is called
     }
 }
 ```
 
-#### <u>Method Injection Heirarchies</u>
+#### Injection Heirarchies
 
-An object can have any number of injectable methods. USyrup will resolve all injectable methods from base class to derived class, so any injectable methods in a base class will be injected first, followed by any subclass(es). This is probably most convenient if you have a MonoBehaviour that derives from another MonoBehaviour that is required to be injected as well. You don't need to create duplicate `[Inject]` annotated methods in order to fulfill base class dependencies!
+An object can have any number of injectable methods and fields. USyrup will resolve all injectable methods from base class to derived class, so any injectable methods in a base class will be injected first, followed by any subclass(es). This is probably most convenient if you have a MonoBehaviour that derives from another MonoBehaviour that is required to be injected as well. You don't need to create duplicate `[Inject]` annotated fields/methods in order to fulfill base class dependencies!
 
 ```c#
 public class Food : MonoBehaviour {
+
+    [Inject]
+    protected FoodName name;
 
     protected Brand brand;
 
@@ -313,6 +324,9 @@ public class Food : MonoBehaviour {
 
 public class Waffle : Food {
 
+    [Inject]
+    private WaffleStyle waffleStyle;
+
     private TastySyrup tastySyrup;
 
     [Inject] //This inject method is called second, so you can be assured that 'brand' is always available if your subclass needs it!
@@ -322,7 +336,7 @@ public class Waffle : Food {
 }
 ```
 
-Above we have a base class Food which has an `[Inject]` annotated method `InitFood()`. Additionally, the `Waffle` class extends `Food` and also has its own `[Inject]` annotated method. USyrup will account for this and inject `Food`'s `[Inject]` method first followed by `Waffle`'s when injecting a MonoBehaviour (or just in normal method injection too!).
+Above we have a base class Food which has an `[Inject]` annotated method `InitFood()` and an injected `FoodName` field. Additionally, the `Waffle` class extends `Food` and also has its own `[Inject]` annotated method and field. USyrup will account for this and inject `Food`'s `[Inject]` field first then `Waffle's` field, followed by `Food`'s method, followed by `Waffle`'s method when injecting a MonoBehaviour. In simple terms, in injection heirarchies, fields from base to deriving class are injected first, followed by methods in the same order.
 
 ## Singleton (Attribute)
 
@@ -452,12 +466,6 @@ SyrupInjector syrupInjector = new SyrupInjector(
 ```
 
 Then this restriction does not apply (but be warned, this isn't as efficient if you're still relying on the Syrup Component elsewhere in your scene).
-
-## Where is Field Injection?
-
-Currently, field injection is not supported. The use-cases for field injection, particularly for MonoBehaviours, can be covered by method injection.
-
-If you have a use-case that contradicts this, feel free to make a request!
 
 ## Where is 'X' dependency injection framework feature?
 

@@ -16,5 +16,6 @@ namespace Syrup.Framework.Model {
         public Type Type { get; set; }
         public bool IsSingleton { get; set; }
         public MethodInfo[] InjectableMethods { get; set; }
+        public FieldInfo[] InjectableFields { get; set; }
      }
 }

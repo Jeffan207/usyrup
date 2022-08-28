@@ -8,6 +8,11 @@ using UnityEngine.TestTools;
 
 public class SyrupInjectorTest {
 
+    SyrupInjectorOptions OPTIONS = new() {
+        VerboseLogging = true
+    };
+
+
     [Test]
     public void TestSyrupInjector_WithSingleProviderModule() {
         SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
@@ -323,5 +328,90 @@ public class SyrupInjectorTest {
         Assert.NotNull(americanBuffet.pancake);
         Assert.NotNull(americanBuffet.tastySyrup);
         Assert.NotNull(americanBuffet.egg);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectFields() {
+        SyrupInjector syrupInjector = new SyrupInjector();
+
+        OrangeJuice orangeJuice = syrupInjector.GetInstance<OrangeJuice>();
+
+        Assert.NotNull(orangeJuice.orange);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectFieldsAndMethods() {
+        SyrupInjector syrupInjector = new SyrupInjector(OPTIONS);
+
+        LightBreakfast lightBreakfast = syrupInjector.GetInstance<LightBreakfast>();
+
+        Assert.NotNull(lightBreakfast.orangeJuice);
+        Assert.NotNull(lightBreakfast.egg);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectNamedFields() {
+        Assert.Throws<MissingDependencyException>(() => {
+            // Show we need the named dependency in order to complete the injection
+            new SyrupInjector().GetInstance<CanadianSyrup>();
+        });
+
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
+
+        CanadianSyrup canadianSyrup = syrupInjector.GetInstance<CanadianSyrup>();
+        Assert.NotNull(canadianSyrup.tastySyrup);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectInheritedFieldsAndMethods() {
+        SyrupInjector syrupInjector = new SyrupInjector(new ProviderWithSingletonDependencyModule());
+
+        NewJerseyBrunch newJerseyBrunch = syrupInjector.GetInstance<NewJerseyBrunch>();
+        Assert.NotNull(newJerseyBrunch.butter);
+        Assert.NotNull(newJerseyBrunch.egg);
+        Assert.NotNull(newJerseyBrunch.orangeJuice);
+        Assert.NotNull(newJerseyBrunch.pancake);
+
+        StateBrunch stateBrunch = syrupInjector.GetInstance<StateBrunch>();
+        Assert.NotNull(stateBrunch.butter);
+        Assert.NotNull(stateBrunch.egg);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectFieldsOnDemand() {
+        SyrupInjector syrupInjector = new SyrupInjector();
+
+        OrangeJuice orangeJuice = new();
+
+        Assert.Null(orangeJuice.orange);
+
+        syrupInjector.Inject(orangeJuice);
+
+        Assert.NotNull(orangeJuice.orange);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectFieldsAndMethodsOnDemand() {
+        SyrupInjector syrupInjector = new SyrupInjector();
+
+        LightBreakfast lightBreakfast = new();
+
+        Assert.Null(lightBreakfast.orangeJuice);
+        Assert.Null(lightBreakfast.egg);
+
+        syrupInjector.Inject(lightBreakfast);
+
+        Assert.NotNull(lightBreakfast.orangeJuice);
+        Assert.NotNull(lightBreakfast.egg);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectPrivateFieldsAndMethods() {
+        SyrupInjector syrupInjector = new SyrupInjector();
+
+        PrivateBreakfast privateBreakfast = syrupInjector.GetInstance<PrivateBreakfast>();
+
+        Assert.NotNull(privateBreakfast.GetOrangeJuice());
+        Assert.NotNull(privateBreakfast.GetEgg());
     }
 }

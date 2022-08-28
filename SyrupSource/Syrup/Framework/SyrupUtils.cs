@@ -72,18 +72,24 @@ namespace Syrup.Framework {
                     }
 
                     var injectableMethods = GetInjectableMethodsFromType(monoBehaviourType);
-                    if (injectableMethods.Length > 0) {
-                        injectableMonoBehaviours.Add(new InjectableMonoBehaviour(monoBehaviour, injectableMethods));
+                    var injectableFields = GetInjectableFieldsFromType(monoBehaviourType);
+                    if (injectableMethods.Length > 0 || injectableFields.Length > 0) {
+                        injectableMonoBehaviours.Add(new InjectableMonoBehaviour(monoBehaviour, injectableMethods, injectableFields));
                     }
                 }
             }
-
         }     
 
-        public static MethodInfo[] GetInjectableMethodsFromType(Type t) {
-            var injectableMethods = t.GetMethods()
+        internal static MethodInfo[] GetInjectableMethodsFromType(Type t) {
+            var injectableMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
                             .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
             return injectableMethods.Reverse().ToArray();
-        }    
+        }
+
+        internal static FieldInfo[] GetInjectableFieldsFromType(Type t) {
+            var injectableFields = t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                            .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
+            return injectableFields.Reverse().ToArray();
+        }
     }
 }
