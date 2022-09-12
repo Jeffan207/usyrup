@@ -49,11 +49,11 @@ Custom Syrup Modules are written and attached to a game object alongside a USyru
 
 # Installation
 
-1. Install through OpenUPM: https://openupm.com/packages/com.cannone.usyrup/#close
+1. Install through [OpenUPM](https://openupm.com/packages/com.cannone.usyrup/#close)
 2. Through the Unity Package Manager directly:
  - Add the package using the git URL of this repo: https://github.com/Jeffan207/usyrup.git
  - Download the tarball from the [releases](https://github.com/Jeffan207/usyrup/releases) page and install through that.
-3. Unity Asset Store: ***COMING SOON***
+3. [Unity Asset Store](https://assetstore.unity.com/packages/slug/231289) 
 
 # Quick Start Guide
 
@@ -336,7 +336,7 @@ public class Waffle : Food {
 }
 ```
 
-Above we have a base class Food which has an `[Inject]` annotated method `InitFood()` and an injected `FoodName` field. Additionally, the `Waffle` class extends `Food` and also has its own `[Inject]` annotated method and field. USyrup will account for this and inject `Food`'s `[Inject]` field first then `Waffle's` field, followed by `Food`'s method, followed by `Waffle`'s method when injecting a MonoBehaviour. In simple terms, in injection heirarchies, fields from base to deriving class are injected first, followed by methods in the same order.
+Above we have a base class Food which has an `[Inject]` annotated method `InitFood()` and an injected `FoodName` field. Additionally, the `Waffle` class extends `Food` and also has its own `[Inject]` annotated method and field. USyrup will account for this and inject `Food`'s `[Inject]` field first then `Waffle's` field, followed by `Food`'s method, followed by `Waffle`'s method. In simple terms, in injection heirarchies, fields from base to deriving class are injected first, followed by methods in the same order.
 
 ## Singleton (Attribute)
 
