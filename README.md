@@ -135,7 +135,7 @@ Providers that are **NOT** also annotated with a `[Singleton]` attribute will su
 
 ## Named (Attribute)
 
-Sometimes it's required to provide to have two provider methods that provide dependencies of the same type. Without doing anything else, this scenario will create an ambiguous injection since the Syrup Injector won't know which provider it should be using. 
+Sometimes it's required to have two provider methods that provide dependencies of the same type. Without doing anything else, this scenario will create an ambiguous injection since the Syrup Injector won't know which provider it should be using. 
 
 These cases can be worked around by using the `[Named]` attribute on provider methods, along with any human readable name. Any provider method with this attribute will be disambiguated from other provider methods that have the same return type. In order to use the dependency from this named provider method you must declare any parameters supplied to other providers/injected constructors with the `[Named]` attribute as well.
 
