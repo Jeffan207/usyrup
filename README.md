@@ -43,7 +43,7 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
 
 # How It Works
 
-USyrup is a runtime dependency injection framework, much like Guice. It uses modules (called "Syrup Modules") for explicitly provided dependencies and constructor injection for the rest. MonoBehaviours can be injected like any other object through the use of method injection, an approach similar to how Zenject handles injection. 
+USyrup is a runtime dependency injection framework, much like Guice. It uses modules (called "Syrup Modules") for explicitly provided dependencies and constructor injection for the rest. MonoBehaviours can be injected like any other object through the use of method and field injection, an approach similar to how Zenject handles injection. 
 
 Custom Syrup Modules are written and attached to a game object alongside a USyrup provided Syrup Component, which reads in the modules and uses them to construct your dependency graph. The graph is then validated to ensure all provided dependencies can be fulfilled and then injects the dependencies into each injectable MonoBehaviour in the scene.
 
