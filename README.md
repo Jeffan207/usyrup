@@ -362,7 +362,7 @@ The above example shows both uses of the `[Singleton]` attribute. On the provide
 
 ## SceneInjection (Attribute)
 
-The SceneInjection attributes controls whether or not the object will injected when the scene is loaded. By default, all MonoBehaviours are treated as if SceneInjection.enabled is set to true, even if the SceneInjection attribute isn't declared on the MonoBehaviour itself. When the SceneInjection is provided with enabled set to false, then USyrup will skip injecting the MonoBehaviour when the scene is loaded. So outside of being more explicit, the only time you would want to use this attribute is if you wanted to conditionally disable scene injection. You would generally do this for objects that are created at runtime or if you want to rely on on-demand style injection instead.
+The `[SceneInjection]` attributes controls whether or not the object will injected when the scene is loaded. By default, all MonoBehaviours are treated as if `SceneInjection.enabled` is set to true, even if the `[SceneInjection]` attribute isn't declared on the MonoBehaviour itself. When the `[SceneInjection]` is provided with enabled set to false, then USyrup will skip injecting the MonoBehaviour when the scene is loaded. So outside of being more explicit, the only time you would want to use this attribute is if you wanted to conditionally disable scene injection. You would generally do this for objects that are created at runtime or if you want to rely on on-demand style injection instead.
 
 ```c#
 [SceneInjection(enabled: false)]
