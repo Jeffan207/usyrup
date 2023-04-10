@@ -37,6 +37,7 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
 - [Where is Field Injection?](#where-is-field-injection)
 - [Where is 'X' dependency injection framework feature?](#where-is-x-dependency-injection-framework-feature)
 - [Why the name "Syrup"?](#why-the-name-syrup)
+- [Development Documentation](#development-documentation)
 </details>
 
 ---
@@ -170,7 +171,7 @@ public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
 
 Above, both Bob and Alice want an egg `Breakfast`. Bob wants scrambled eggs and Alice wants sunny-side-up eggs (yuck). Our `Breakfast` object now takes in an `EggDish` type which itself takes in a custom string indicating what unique flavor of dish it is. In order to disambiguate which `EggDish` goes to Bob and which to Alice, we annotate each provider with a `[Named]` attribute indicating which exact flavor of `EggDish` the method is providing. In Bob and Alice's `Breakfast` providers we annotate the `EggDish` parameters again with the `[Named]` attribute to indicate which flavor of eggs they want.
 
-The `[Named]` attribute can also be used on injectable method/constructor parameters too!
+The `[Named]` attribute can also be used on injectable field/method/constructor parameters too!
 
 ```c#
 public class TastySyrup {
@@ -482,3 +483,34 @@ Three reasons:
 1. The framework was heavily inspired by both Guice/Dagger. Since it's runtime dependency injection, similar to Guice, I chose a name with a similar foodish connotation. The alternative name was Dirk (a type of dagger)...but maybe that can be saved for a compile time variant of this framework if I ever make it.
 2. I have a sneaking suspicion this framework probably isn't the fastest DI framework out there (syrup is viscous).
 3. I get a chuckle out of thinking about injecting syrup into things. Delicious.
+
+# Development Documentation
+
+The documentation below this point is for myself so I remember the process on how to update the Unity Asset.
+
+## Updating the Built-In Unity Documentation
+
+As per Unity guidelines, documentation needs to ship with each asset inside the source directory. The guidelines also disallow using markdown as the documentation format...so instead of duplicating the docs here we use `pandoc` to convert this markdown file into an RTF file and then place that file inside our source.
+
+You can get pandoc via Homebrew:
+
+```bash
+brew install pandoc
+```
+
+Once you have made your doc changes you can run the documentation_generate script under the Assets/ folder.
+
+```bash
+./documentation_generate.sh
+```
+
+This will overwrite the existing generated docs and drop them in the correct directory. Note: the doc images won't crosslink properly in the RTF file, this is okay!
+
+## Uploading a New Asset Store Version
+
+1. Make sure to update the package.json to a new semantic version.
+2. Go to the Unity Publisher Portal page for the USyrup package.
+3. Click the button to use the asset store tool to upload a new version of the package.
+
+
+
