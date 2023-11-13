@@ -7,6 +7,7 @@ using Syrup.Framework.Attributes;
 using Syrup.Framework.Model;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Syrup.Framework.Containers;
 
 namespace Syrup.Framework {
 
@@ -56,6 +57,11 @@ namespace Syrup.Framework {
                     .Where(x => x.GetCustomAttributes(typeof(Provides), false).FirstOrDefault() != null);
 
                 foreach (MethodInfo methodInfo in providerMethods) {
+                    if (IsLazyWrapped(methodInfo.ReturnType)) {
+                        throw new InvalidProvidedDependencyException(string.Format(
+                                "A provider is trying to provide a Lazy type explicitly for '{0}', try pushing the Lazy type down onto the consuming class instead",
+                                methodInfo.ReturnType.FullName));
+                    }
 
                     Named dependencyName = methodInfo.GetCustomAttribute<Named>();
                     string name = dependencyName != null ? dependencyName.name : null;
@@ -67,8 +73,7 @@ namespace Syrup.Framework {
                         throw new DuplicateProviderException
                             (string.Format("A provider for the specified dependency '{0}' already exists!",
                             namedDependency));
-                    }
-                   
+                    }                   
                     HashSet<NamedDependency> uniqueParameters = new();
                     foreach (ParameterInfo param in methodInfo.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -214,37 +219,115 @@ namespace Syrup.Framework {
                         "Incomplete dependency graph. The following dependencies are missing from the completed graph:\n{0}",
                     missingDependencies));
             }
-        }
+        }        
 
+        /// <summary>
+        /// This method (and it's sister field method) should be used for
+        /// building the dependency heirarchy. For that process we want to
+        /// discard any containers so we can build the underlying types.
+        /// </summary>
         private NamedDependency GetNamedDependencyForParam(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
-            string name = dependencyName != null ? dependencyName.name : null;
-            return new NamedDependency(name, param.ParameterType);
+            string name = dependencyName != null ? dependencyName.name : null;           
+            Type paramType = GetContainedType(param.ParameterType);
+            return new NamedDependency(name, paramType);
         }
 
         private NamedDependency GetNamedDependencyForField(FieldInfo field) {
             Named dependencyName = field.GetCustomAttribute<Named>();
             string name = dependencyName != null ? dependencyName.name : null;
+            Type fieldType = GetContainedType(field.FieldType);
+            return new NamedDependency(name, fieldType);
+        }
+
+        /// <summary>
+        /// This method (and it's sister field method) should be used for
+        /// injecting fields/methods into injectable objects directly. We
+        /// want the full types for those injections.
+        /// </summary>
+        private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
+            Named dependencyName = param.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
+            return new NamedDependency(name, param.ParameterType);
+        }
+
+        private NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) {
+            Named dependencyName = field.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
             return new NamedDependency(name, field.FieldType);
         }
 
+        private Type GetContainedType(Type type) {
+            if (IsLazyWrapped(type)) {
+                return type.GetGenericArguments()[0];
+            }
+            return type;
+        }
+
+        private bool IsLazyWrapped(Type type) {
+            return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(LazyObject<>));
+        }
+
+        /// <summary>
+        /// Given a named dependency go through and iterate through the dependency's
+        /// required dependencies and build them, ultimately returning the requested
+        /// dependency.
+        /// </summary>
+        /// <param name="namedDependency">The NamedDependency object to build</param>
+        /// <returns>The requested dependency or its LazyObject wrapped container</returns>
         private object BuildDependency(NamedDependency namedDependency) {
 
-            if (!dependencySources.ContainsKey(namedDependency)) {
-                throw new MissingDependencyException(string.Format("'{0}' is not a provided dependency!", namedDependency));
+
+            NamedDependency dependencyToBuild = namedDependency;
+            bool isLazy = IsLazyWrapped(namedDependency.type);
+            if (isLazy) {                
+                Type containedType = GetContainedType(namedDependency.type);                
+                dependencyToBuild = new NamedDependency(namedDependency.name, containedType);
+                if (verboseLogging) {
+                    Debug.Log(string.Format("Requested lazy instance of type: {0}", dependencyToBuild));
+                }
+            }
+            
+
+            if (!dependencySources.ContainsKey(dependencyToBuild)) {
+                throw new MissingDependencyException(string.Format("'{0}' is not a provided dependency!", dependencyToBuild));
             }
 
-            DependencyInfo dependencyInfo = dependencySources[namedDependency];
-            if (dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(namedDependency)) {
+            DependencyInfo dependencyInfo = dependencySources[dependencyToBuild];
+            if (dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(dependencyToBuild)) {
                 if (verboseLogging) {
-                    Debug.Log(string.Format("Provide singleton: {0}", namedDependency.ToString()));
-                }                
+                    Debug.Log(string.Format("Provide singleton: {0}", dependencyToBuild.ToString()));
+                }
+                return fulfilledDependencies[dependencyToBuild];
+            }
+            // Let's also check the Lazy version for this dependency.
+            // Lazy containers should be singletons if the underlying type is a singleton
+            // (Note: we pass in the original namedDependency param since it's already Lazy!)
+            if (isLazy && dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(namedDependency)) {
+                if (verboseLogging) {
+                    Debug.Log(string.Format("Provide lazy singleton: {0}", namedDependency.ToString()));
+                }
                 return fulfilledDependencies[namedDependency];
             }
 
             if (verboseLogging) {
-                Debug.Log(string.Format("Constructing object: {0}", namedDependency.ToString()));
-            }            
+                Debug.Log(string.Format("Constructing object: {0}", dependencyToBuild.ToString()));
+            }
+
+            // We don't want to build the graph for lazy dependencies during the injection
+            // phase, so for these dependencies we build a lazy container for them and
+            // return that container directly.
+            if (isLazy) {
+                // Since we cannot just create arbitrary generic types Lazy<T> instances at runtime
+                // we need to use reflection to create them instead.
+                object lazyDependency = Activator.CreateInstance(namedDependency.type, namedDependency.name, this);
+
+                if (dependencyInfo.IsSingleton) {
+                    fulfilledDependencies.Add(namedDependency, lazyDependency);
+                }
+
+                return lazyDependency;
+            }
 
             object dependency;
             if (dependencyInfo.DependencySource == DependencySource.PROVIDER) {
@@ -262,7 +345,7 @@ namespace Syrup.Framework {
             }
 
             if (dependencyInfo.IsSingleton) {
-                fulfilledDependencies.Add(namedDependency, dependency);
+                fulfilledDependencies.Add(dependencyToBuild, dependency);
             }
 
             return dependency;
@@ -272,7 +355,7 @@ namespace Syrup.Framework {
             int paramIndex = 0;
             object[] parameters = new object[method.GetParameters().Length];
             foreach (ParameterInfo parameterInfo in method.GetParameters()) {
-                parameters[paramIndex] = BuildDependency(GetNamedDependencyForParam(parameterInfo));
+                parameters[paramIndex] = BuildDependency(GetNamedDependencyForParamInjection(parameterInfo));
                 paramIndex++;
             }
             return parameters;
@@ -282,7 +365,7 @@ namespace Syrup.Framework {
             int paramIndex = 0;
             object[] parameters = new object[constructor.GetParameters().Length];
             foreach (ParameterInfo parameterInfo in constructor.GetParameters()) {
-                parameters[paramIndex] = BuildDependency(GetNamedDependencyForParam(parameterInfo));
+                parameters[paramIndex] = BuildDependency(GetNamedDependencyForParamInjection(parameterInfo));
                 paramIndex++;
             }
             return parameters;
@@ -364,7 +447,7 @@ namespace Syrup.Framework {
         /// <typeparam name="T">The name of the type if explicitly given one with the [Named] attribute</typeparam>
         /// <returns></returns>
         public T GetInstance<T>(string name) {
-            NamedDependency namedDependency = new NamedDependency(name, typeof(T));
+            NamedDependency namedDependency = new NamedDependency(name, typeof(T));            
             object dependency = BuildDependency(namedDependency);
             return (T)dependency;
         }
@@ -386,7 +469,7 @@ namespace Syrup.Framework {
                 if (verboseLogging) {
                     Debug.Log(string.Format("Injecting (Field) [{0}] into [{1}]", injectableField.FieldType, objectToInject.GetType()));
                 }
-                injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForField(injectableField)));
+                injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForFieldInjection(injectableField)));
             }
 
             foreach (MethodInfo injectableMethod in injectableMethods) {

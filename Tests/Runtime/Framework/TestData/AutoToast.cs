@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using Syrup.Framework.Attributes;
+using Syrup.Framework;
 
 
 /// <summary>

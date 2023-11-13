@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using Syrup.Framework;
+using Syrup.Framework.Containers;
 using Syrup.Framework.Exceptions;
 using Tests.Framework.TestData;
 using Tests.Framework.TestModules;
@@ -414,4 +415,168 @@ public class SyrupInjectorTest {
         Assert.NotNull(privateBreakfast.GetOrangeJuice());
         Assert.NotNull(privateBreakfast.GetEgg());
     }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectLazyContainersOnDemand() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+
+        LazyObject<TastySyrup> lazySyrup1 = syrupInjector.GetInstance<LazyObject<TastySyrup>>();
+        LazyObject<TastySyrup> lazySyrup2 = syrupInjector.GetInstance<LazyObject<TastySyrup>>();
+
+        Assert.NotNull(lazySyrup1);
+        Assert.NotNull(lazySyrup2);
+
+        TastySyrup syrup1 = lazySyrup1.Get();
+        TastySyrup syrup2 = lazySyrup2.Get();
+
+        Assert.NotNull(syrup1);
+        Assert.NotNull(syrup2);
+        Assert.AreNotEqual(syrup1.id, syrup2.id);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectLazyContainersInConstructor() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+
+        LazySyrupEater lazySyrupEater1 = syrupInjector.GetInstance<LazySyrupEater>();
+        LazySyrupEater lazySyrupEater2 = syrupInjector.GetInstance<LazySyrupEater>();
+
+        Assert.NotNull(lazySyrupEater1);
+        Assert.NotNull(lazySyrupEater2);
+
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
+
+        Assert.NotNull(syrup1);
+        Assert.NotNull(syrup2);
+        Assert.AreNotEqual(syrup1.id, syrup2.id);
+    }
+
+
+    [Test]
+    public void TestSyrupInjector_CanInjectLazyContainersInFields() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+
+        LazySyrupEaterField lazySyrupEater1 = new();
+        LazySyrupEaterField lazySyrupEater2 = new();
+
+        syrupInjector.Inject(lazySyrupEater1);
+        syrupInjector.Inject(lazySyrupEater2);
+
+        Assert.NotNull(lazySyrupEater1.syrup);
+        Assert.NotNull(lazySyrupEater2.syrup);
+
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
+
+        Assert.NotNull(syrup1);
+        Assert.NotNull(syrup2);
+        Assert.AreNotEqual(syrup1.id, syrup2.id);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectLazyContainersInMethods() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+
+        LazySyrupEaterMethod lazySyrupEater1 = new();
+        LazySyrupEaterMethod lazySyrupEater2 = new();
+
+        syrupInjector.Inject(lazySyrupEater1);
+        syrupInjector.Inject(lazySyrupEater2);
+
+        Assert.NotNull(lazySyrupEater1.syrup);
+        Assert.NotNull(lazySyrupEater2.syrup);
+
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
+
+        Assert.NotNull(syrup1);
+        Assert.NotNull(syrup2);
+        Assert.AreNotEqual(syrup1.id, syrup2.id);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectNamedLazyContainers() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
+
+        LazySyrupEaterNamed lazySyrupEater1 = syrupInjector.GetInstance<LazySyrupEaterNamed>();
+        LazySyrupEaterNamed lazySyrupEater2 = syrupInjector.GetInstance<LazySyrupEaterNamed>();
+
+        Assert.NotNull(lazySyrupEater1);
+        Assert.NotNull(lazySyrupEater2);
+
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
+
+        Assert.NotNull(syrup1);
+        Assert.NotNull(syrup2);
+        Assert.AreNotEqual(syrup1.id, syrup2.id);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectSingletonLazyContainers() {
+        SyrupInjector syrupInjector = new SyrupInjector(OPTIONS, new SingletonProviderModule());
+
+        LazyEggEater lazyEggEater1 = new();
+        LazyEggEater lazyEggEater2 = new();
+
+        syrupInjector.Inject(lazyEggEater1);
+        syrupInjector.Inject(lazyEggEater2);
+
+        Assert.NotNull(lazyEggEater1.egg);
+        Assert.NotNull(lazyEggEater2.egg);
+
+        // The LazyObjects themselves should also be singletons!
+        // This should check the memory addresses right, if this
+        // fails then consider trying a different method
+        Assert.AreEqual(lazyEggEater1.egg, lazyEggEater2.egg);
+      
+        Egg egg1 = lazyEggEater1.egg.Get();
+        Egg egg2 = lazyEggEater2.egg.Get();
+
+        Assert.NotNull(egg1);
+        Assert.NotNull(egg2);
+        Assert.AreEqual(egg1.id, egg2.id);
+    }
+
+    [Test]
+    public void TestSyrupInjector_ThrowsException_WhenModuleProvidesExplictLazyContainer() {
+        Assert.Throws<InvalidProvidedDependencyException>(() => {
+            new SyrupInjector(new LazySingleProviderModule());
+        });
+    }
+
+    [Test]
+    public void TestSyrupInjector_InjectsDirectlyFromManuallyCreatedLazyObject() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+        // We're passing the injector directly just for testing
+        LazyObject<TastySyrup> lazyTastySyrup = new(null, syrupInjector);
+        TastySyrup syrup = lazyTastySyrup.Get();
+        Assert.NotNull(syrup);
+    }
+
+    [Test]
+    public void TestSyrupInjector_CanInjectDependenciesThatDependOnLazyObjects() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+
+        LazyBreakfastClub lazyBreakfastClub = syrupInjector.GetInstance<LazyBreakfastClub>();
+
+        Assert.NotNull(lazyBreakfastClub);
+        Assert.NotNull(lazyBreakfastClub.lazySyrupEater);
+        Assert.NotNull(lazyBreakfastClub.lazySyrupEater.syrup);
+        Assert.NotNull(lazyBreakfastClub.lazySyrupEater.syrup.Get());
+    }
+
+
+    [Test]
+    public void TestSyrupInjector_CanInjectLazyContainersInProviderMethodParams() {
+        SyrupInjector syrupInjector = new SyrupInjector(new LazyProviderParamModule());
+
+        LazySyrupEater lazySyrupEater = syrupInjector.GetInstance<LazySyrupEater>();
+
+        Assert.NotNull(lazySyrupEater);
+        Assert.NotNull(lazySyrupEater.syrup);
+        Assert.NotNull(lazySyrupEater.syrup.Get());
+    }
+
 }

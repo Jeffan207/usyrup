@@ -8,6 +8,7 @@ using UnityEngine.TestTools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Text.RegularExpressions;
+using Syrup.Framework.Containers;
 
 public class SyrupComponentTest {
 
@@ -114,7 +115,9 @@ public class SyrupComponentTest {
         badPancake2.AddComponent<BadPancake>();
 
         GameObject sceneComponent = new GameObject();
-        sceneComponent.AddComponent<ExampleSyrupModule>();
+        // The flour was a later test addition so it gets its own module
+        sceneComponent.AddComponent<FlourModule>(); 
+        sceneComponent.AddComponent<ExampleSyrupModule>();        
         sceneComponent.AddComponent<SyrupComponent>();
 
         yield return null;
@@ -133,6 +136,15 @@ public class SyrupComponentTest {
         Assert.NotNull(badSyrup1);
         Assert.NotNull(badSyrup2);        
         Assert.AreEqual(badSyrup1.id, badSyrup2.id);
+
+        LazyObject<Flour> lazyFlour1 = badPancake1.GetComponent<BadPancake>().lazyFlour;
+        LazyObject<Flour> lazyFlour2 = badPancake2.GetComponent<BadPancake>().lazyFlour;
+
+        Assert.NotNull(lazyFlour1);
+        Assert.NotNull(lazyFlour2);
+        Flour flour1 = lazyFlour1.Get();
+        Flour flour2 = lazyFlour2.Get();
+        Assert.AreNotEqual(flour1.id, flour2.id);
 
         UnityEngine.Object.Destroy(goodPancake1);
         UnityEngine.Object.Destroy(goodPancake2);
@@ -232,6 +244,21 @@ public class SyrupComponentTest {
         Assert.NotNull(autoToastComponent.butter);
 
         UnityEngine.Object.Destroy(autoToast);
+        UnityEngine.Object.Destroy(sceneComponent);
+    }
+
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_CanBeFetchedWithinLazyObject() {
+        GameObject sceneComponent = new GameObject();
+        sceneComponent.AddComponent<FlourModule>();
+        sceneComponent.AddComponent<SyrupComponent>();
+
+        yield return null;
+
+        LazyObject<Flour> lazyFlour = new();
+        Flour flour = lazyFlour.Get();
+        Assert.NotNull(flour);
+
         UnityEngine.Object.Destroy(sceneComponent);
     }
 

@@ -30,6 +30,9 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
             - [Injection Heirarchies](#injection-heirarchies)
     - [Singleton (Attribute)](#singleton-attribute)
     - [SceneInjection (Attribute)](#sceneinjection-attribute)
+    - [Containers](#containers)
+        - [LazyObject Containers](#lazyobject-containers)
+        - [Constructing LazyObjects Directly](#constructing-lazyobjects-directly)
     - [Syrup Component](#syrup-component)
     - [Syrup Injector](#syrup-injector)
         - [On-Demand Injection](#on-demand-injection)
@@ -84,7 +87,7 @@ public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
     }
 
     [Provides]
-    public TastySyrup ProvidesTasty() {
+    public TastySyrup ProvidesTastySyrup() {
         return new TastySyrup();
     }
 }
@@ -164,7 +167,7 @@ public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
     [Provides]
     [Named("SunnySideUpEggs")]
     public EggDish ProvidesSunnySideUpEggs() {
-        return new EggDish("Sunny-Side-Up");
+        return new EggDish("SunnySideUp");
     }
 }
 ```
@@ -284,7 +287,7 @@ USyrup automatically detects all `[Inject]` annotated fields/methods attached to
 
 #### Constructor Injection Post-Step
 
-Sometimes, you might want to do some additional work to finish building an object outside of constructor injection. You can do this by also supplying an `[Inject]` annotated field/method inside the class in addition to an `[Inject]` annotated constructor. USyrup will always invoke the `[Inject]` annotated constructor first, followed by injecting the `[Inject]` annotated member(s).
+Sometimes, you might want to do some additional work to finish building an object outside of constructor injection. You can do this by also supplying an `[Inject]` annotated field/method inside the class in addition to an `[Inject]` annotated constructor. USyrup will always invoke the `[Inject]` annotated constructor first, followed by injecting the `[Inject]` annotated member(s), with the order being constructor -> fields -> methods.
 
 ```c#
 public class Pancake {
@@ -384,6 +387,67 @@ public class Food : MonoBehaviour {
 
 In the above example, the `Food` object has an injectable `InitFood()` method. However, we have explicitly disabled scene injection with the attribute `[SceneInjection(enabled: false)]`. So instead the object fulfills it's dependency by usng `SyrupInjector.Get<>()`.
 
+## Containers
+
+### LazyObject Containers
+
+`LazyObject` containers are special wrapper objects that allow you to inject your objects now, but construct them later. This is useful if you have a dependency that has a long construction time that you want to offload until it's actually needed. In order to use `LazyObject` all you need to do is wrap your injected types with the `LazyObject<>` type at your injection sites.
+
+```c#
+public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+    
+    // TastySyrup is provided directly, without being wrapped in an LazyObject
+    [Provides]
+    [Named("Maple")]
+    public TastySyrup ProvidesTastySyrup() {
+        return new TastySyrup();
+    }
+}
+public class Pancake {    
+    // We can choose to inject our TastySyrup wrapped in a LazyObject container with
+    // zero additional work needed to enable this
+    [Inject]
+    [Named("Maple")]
+    LazyObject<TastySyrup> syrup;
+
+    // pretend we inject this on-demand somewhere
+}
+```
+
+In the above example, `TastySyrup` is provided directly via a `Provider` Module. Note how we do not need to return `LazyObject<TastySyrup>` from `ProvidesTastySyrup()`, this wrapping is done under the hood by the `SyrupInjector` at injection time. In fact, if we tried to provide a `LazyObject` instance directly then the `SyrupInjector` would throw an exception and direct you to use the `LazyObject` container at your injection site instead. Once we have the `LazyObject` injected, we only need to call `.Get()` on the container to retrieve a concrete instance of the contained type.
+
+```c#
+LazyObject<TastySyrup> lazySyrup;
+
+public void PourSyrup() {
+    TastySyrup syrup = lazySyrup.Get();
+    // Pour syrup on our pancakes
+}
+```
+
+The instance retrieved by `.Get()` will be cached on the `LazyObject` container, so subsequent calls to `.Get()` will always yield the same object instance. `LazyObject` wrapped dependencies that are provided by `[Singleton]` annotated sources will be `Singleton`s themselves along with the underlying contained instances they wrap.
+
+### Constructing LazyObjects Directly
+
+Like all injections, `LazyObject` wrapped dependencies can be injected via on-demand injection as well.
+
+```c#
+LazyObject<TastySyrup> tastySyrup = SyrupInjector.GetInstance<LazyObject<TastySyrup>>();
+```
+
+This is cumbersome to write for obvious reasons, so you can use a shorthand `new()` on the `LazyObject` type directly.
+
+```c#
+LazyObject<TastySyrup> tastySyrup = new();
+```
+
+This creates a new `LazyObject` containing your desired type directly. However, there are a few drawbacks of this approach that are worth considering:
+
+1. Normally when the injected type is a `Singleton` then the `LazyObject` itself is also a `Singleton`. If you create a `LazyObject` directly then the `LazyObject` container obviously won't be a `Singleton` if you create multiple manually (but the underlying injected type will still be injected as a `Singleton`, so don't worry about that). This could have consequences of adding additional memory usage to your game.
+2. When the SyrupInjector builds the dependency graph initially on scene load it will attempt to validate that all requested dependencies in graph are injectable (i.e. all requested dependencies are provided somewhere). If you construct a `LazyObject` manually you won't get this kind of protection as your object you want to inject might actually be missing a required dependency. In these cases you will be met with a a `MissingDependencyException` instead at injection time, which can be later in your application's lifecycle than desired.
+
+For these above reasons, it's not recommended to use `new()` to construct your `LazyObject`s unless you have a good reason to.
+
 ## Syrup Component
 
 The Syrup Component is a MonoBehaviour that sits in your scene(s) and holds your Syrup Modules. On `Awake()`, the Syrup Component loads all Syrup Modules that are also attached to the same game object as itself and builds/validates your dependency graph. On `Start()` all MonoBehaviours in your scene with `[Inject]` annotated methods will be injected. Any other MonoBehaviour that is either also attached to the same game object as the Syrup Component or attached to a game object that is a child of the Syrup Component game object will not be injected. This is because it is assumed that these objects will either be full-formed or can easily be formed by hand inside your Syrup Module directly.
@@ -454,9 +518,9 @@ The above examples show the `Breakfast` class implemented in two ways. The first
 
 ## Caveats
 
-USyrup builds and injects the dependency graph during the `Awake()` step. This means when the scene loads you shouldn't expect any dependencies to be available to use in your MonoBehaviours until at least `Start()`. This is true for both scene injection and on-demand injection that access the Syrup Injector provided through the Syrup Component.
+USyrup builds the dependency graph during the `Awake()` step and injects your MonoBehaviours during `Start()`. This means when the scene loads you shouldn't expect any dependencies to be available to use in your MonoBehaviours until at least `Start()`. However, the Syrup Component's default script execution order is set to `-900` meaning this is true only for scene injection and not on-demand injection. During `Awake()` you can on-demand inject any dependency, however, be mindful they may not be fully initialized yet (particularly important for injected MonoBehaviours) as their own `Awake()` step may not have run.
 
-If you build your own Syrup Injector outside the Syrup Component context via:
+Alternatively, if you build your own Syrup Injector outside the Syrup Component context via:
 
 ```c#
 SyrupInjector syrupInjector = new SyrupInjector(
@@ -466,7 +530,7 @@ SyrupInjector syrupInjector = new SyrupInjector(
 );
 ```
 
-Then this restriction does not apply (but be warned, this isn't as efficient if you're still relying on the Syrup Component elsewhere in your scene).
+Then your injections are not bound to the Syrup Component's execution order, you can inject immediately. (but this doesn't really work within the context of MonoBehaviours/Unity and isn't as efficient as relying on the Syrup Component elsewhere in your scene).
 
 ## Where is 'X' dependency injection framework feature?
 
