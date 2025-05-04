@@ -78,3 +78,5 @@ crashlytics-build.properties
 Sample/
 Sample.meta
 InitTestScene*
+
+.idea/

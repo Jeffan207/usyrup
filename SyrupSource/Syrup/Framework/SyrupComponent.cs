@@ -29,6 +29,11 @@ namespace Syrup.Framework {
         [Tooltip("Enable/disables verbose console logging for both the SyrupComponent and SyrupInjector.")]
         private bool verboseLogging = false;
 
+        [SerializeField]
+        [Tooltip("Allows Syrup Component to start injecting in Awake method instead of Start method. " +
+                 "This way you will be able to use the injected objects in even OnEnable method.")]
+        private bool injectInAwake = false;
+
         private void Awake() {
             ISyrupModule[] syrupModules = GetComponents<ISyrupModule>();
 
@@ -39,9 +44,27 @@ namespace Syrup.Framework {
                 syrupInjectorOptions.VerboseLogging = verboseLogging;
                 SyrupInjector = new SyrupInjector(syrupInjectorOptions, syrupModules);
             }
+
+            if (injectInAwake) {
+                StartInject();
+            }
         }
 
         private void Start() {
+            if (!injectInAwake) {
+                StartInject();
+            }
+        }
+
+        private void OnDestroy() {
+            ClearInjector();
+        }
+
+        public static void ClearInjector() {
+            SyrupInjector = null;
+        }
+
+        private void StartInject() {
             if (SyrupInjector == null) {
                 Debug.LogWarning("SyrupInjector has not been initialized, was it cleared between frames?");
                 return;
@@ -61,14 +84,6 @@ namespace Syrup.Framework {
             } else {
                 SyrupInjector.InjectAllGameObjects();
             }
-        }
-
-        private void OnDestroy() {
-            ClearInjector();
-        }
-
-        public static void ClearInjector() {
-            SyrupInjector = null;
         }
     }
 }
