@@ -22,6 +22,7 @@ resharper_keep_blank_lines_in_code = 1
 resharper_keep_blank_lines_in_declarations = 1
 resharper_wrap_after_declaration_lpar = true
 resharper_wrap_before_declaration_rpar = true
+resharper_indent_inside_namespace = true
 resharper_indent_preprocessor_directives = normal
 resharper_keep_existing_declaration_parens_arrangement = false
 resharper_local_function_body = expression_body
