@@ -473,6 +473,21 @@ public void PourSyrup() \{\line
 \cell}
 }
 \intbl\row}
+{
+\trowd \trgaph120
+\cellx2715\cellx5430\cellx8145\cellx8638
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Inject in Awake\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 True\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 bool}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Flag that controls whether or not to run scene injection during the {\f1 Awake()} step instead of {\f1 Start()}. Default: {\f1 false}.\par}
+\cell}
+}
+\intbl\row}
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Syrup Injector\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The Syrup Injector lives within the Syrup Component. It is responsible for building the dependency graph and fetching/caching any dependencies as they are needed. It is created on first scene load and is destroyed in {\f1 OnDestroy()} when the scene transitions (meaning your dependencies are recreated between scenes). The Syrup Injector is a singleton and any new Syrup Components and Modules added to your scene will be added directly to the currently active Syrup Injector.\par}
@@ -518,7 +533,7 @@ public class Breakfast : MonoBehaviour \{\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The above examples show the {\f1 Breakfast} class implemented in two ways. The first way using {\f1 SyrupInjector.GetInstance()} to fulfill the {\f1 Breakfast} class\u8217' dependencies and a second way using {\f1 SyrupInjector.Inject(this)}. Using the second method, the SyrupInjector will call back into the {\f1 Breakfast} class and invoke it\u8217's injectable {\f1 InitBreakfast()} method with the dependencies it needs to provide. As can be seen, one way is not strictly better than the other as both can be used to accomplish the same goal.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Caveats\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 USyrup builds the dependency graph during the {\f1 Awake()} step and injects your MonoBehaviours during {\f1 Start()}. This means when the scene loads you shouldn\u8217't expect any dependencies to be available to use in your MonoBehaviours until at least {\f1 Start()}. However, the Syrup Component\u8217's default script execution order is set to {\f1 -900} meaning this is true only for scene injection and not on-demand injection. During {\f1 Awake()} you can on-demand inject any dependency, however, be mindful they may not be fully initialized yet (particularly important for injected MonoBehaviours) as their own {\f1 Awake()} step may not have run.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 By default, USyrup builds the dependency graph during the {\f1 Awake()} step and injects your MonoBehaviours during {\f1 Start()}. This means when the scene loads you shouldn\u8217't expect any dependencies to be available to use in your MonoBehaviours until at least {\f1 Start()}. However, the Syrup Component\u8217's default script execution order is set to {\f1 -900} meaning this is true only for scene injection and not on-demand injection. During {\f1 Awake()} you can on-demand inject any dependency, however, be mindful they may not be fully initialized yet (particularly important for injected MonoBehaviours) as their own {\f1 Awake()} step may not have run.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Alternatively, if you build your own Syrup Injector outside the Syrup Component context via:\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 SyrupInjector syrupInjector = new SyrupInjector(\line
     new SomeModule1(),\line
