@@ -18,7 +18,6 @@ resharper_braces_for_ifelse = required
 resharper_braces_for_while = required
 resharper_constructor_or_destructor_body = expression_body
 resharper_empty_block_style = together
-resharper_csharp_insert_final_newline = true
 resharper_keep_blank_lines_in_code = 1
 resharper_keep_blank_lines_in_declarations = 1
 resharper_wrap_after_declaration_lpar = true
