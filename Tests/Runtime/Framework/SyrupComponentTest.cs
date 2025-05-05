@@ -262,4 +262,29 @@ public class SyrupComponentTest {
         UnityEngine.Object.Destroy(sceneComponent);
     }
 
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_AwakeInjection() {
+        GameObject goodPancake = new GameObject();
+        goodPancake.AddComponent<GoodPancake>();
+
+
+        GameObject sceneComponent = new GameObject();
+
+        // Deactivate so awake doesn't immiedately run injection
+        sceneComponent.SetActive(false);
+        sceneComponent.AddComponent<ExampleSyrupModule>();
+        sceneComponent.AddComponent<SyrupComponent>();
+        sceneComponent.GetComponent<SyrupComponent>().SetInjectInAwake(true);
+        sceneComponent.SetActive(true);
+
+        // Injection should be done in the Awake() method after enabled
+        yield return null;
+
+        PureMapleSyrup pureMapleSyrup = goodPancake.GetComponent<GoodPancake>().pureMapleSyrup;
+        Assert.NotNull(pureMapleSyrup);
+
+        UnityEngine.Object.Destroy(goodPancake);
+        UnityEngine.Object.Destroy(sceneComponent);
+    }
+
 }

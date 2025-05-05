@@ -459,6 +459,7 @@ The Syrup Component itself has the following tunable parameters:
 | Scenes To Inject     | False   | `List<String>`  | A list of scenes that this Syrup Component is responsible for injecting. If not set, all game objects in all loaded scenes will be injected. Set this if you plan to load your scenes additively so you don't double inject your existing objects. |
 | Use Scene Injection  | True   | `bool`  | Flag that indicates whether or not the Syrup Component should inject objects when the scene loads. By default this is set to true. This flag is useful if you don't want to use scene injection at all and don't want to add the `[SceneInjection(enabled: false)]` attribute to every object |
 | Verbose Logging  | True   | `bool`  | Flag that controls how verbose the console logging by should be for the Syrup Component and the Syrup Injector created by the component. By default this is set to false. |
+| Inject in Awake  | True   | `bool`  | Flag that controls whether or not to run scene injection during the `Awake()` step instead of `Start()`. Default: `false`. |
 
 ## Syrup Injector
 
@@ -518,7 +519,7 @@ The above examples show the `Breakfast` class implemented in two ways. The first
 
 ## Caveats
 
-USyrup builds the dependency graph during the `Awake()` step and injects your MonoBehaviours during `Start()`. This means when the scene loads you shouldn't expect any dependencies to be available to use in your MonoBehaviours until at least `Start()`. However, the Syrup Component's default script execution order is set to `-900` meaning this is true only for scene injection and not on-demand injection. During `Awake()` you can on-demand inject any dependency, however, be mindful they may not be fully initialized yet (particularly important for injected MonoBehaviours) as their own `Awake()` step may not have run.
+By default, USyrup builds the dependency graph during the `Awake()` step and injects your MonoBehaviours during `Start()`. This means when the scene loads you shouldn't expect any dependencies to be available to use in your MonoBehaviours until at least `Start()`. However, the Syrup Component's default script execution order is set to `-900` meaning this is true only for scene injection and not on-demand injection. During `Awake()` you can on-demand inject any dependency, however, be mindful they may not be fully initialized yet (particularly important for injected MonoBehaviours) as their own `Awake()` step may not have run.
 
 Alternatively, if you build your own Syrup Injector outside the Syrup Component context via:
 

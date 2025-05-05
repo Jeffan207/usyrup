@@ -31,7 +31,7 @@ namespace Syrup.Framework {
 
         [SerializeField]
         [Tooltip("Allows Syrup Component to start injecting in Awake method instead of the Start method. " +
-                 "This way you will be able to use the injected objects even methods like OnEnable.")]
+                 "This way you will be able to use the injected objects in methods like OnEnable.")]
         private bool injectInAwake = false;
 
         private void Awake() {
@@ -84,6 +84,10 @@ namespace Syrup.Framework {
             } else {
                 SyrupInjector.InjectAllGameObjects();
             }
+        }
+
+        public void SetInjectInAwake(bool enabled) {
+            injectInAwake = enabled;
         }
     }
 }
