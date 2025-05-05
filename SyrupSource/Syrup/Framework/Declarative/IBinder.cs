@@ -1,5 +1,3 @@
-﻿namespace Syrup.Framework;
-
-namespace Syrup.Framework.Declarative {
+﻿namespace Syrup.Framework.Declarative {
     public interface IBinder { }
 }
