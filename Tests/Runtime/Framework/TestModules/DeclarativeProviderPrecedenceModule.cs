@@ -4,7 +4,7 @@ using Syrup.Framework.Attributes;
 using Tests.Framework.TestData;
 
 namespace Tests.Framework.TestModules {
-    // For testing Provider vs Declarative precedence
+    // For testing Provider and Declarative duplication.
     public class DeclarativeProviderPrecedenceModule : ISyrupModule {
         public const string ProvidedId = "FROM_PROVIDER";
 
@@ -14,7 +14,6 @@ namespace Tests.Framework.TestModules {
         }
 
         public void Configure(IBinder binder) {
-            // This binding should be ignored because a Provider exists for IDeclarativeService
             binder.Bind<IDeclarativeService>().To<DeclarativeServiceImpl2>();
         }
     }

@@ -680,13 +680,9 @@ public class SyrupInjectorTest {
     }
 
     [Test]
-    public void TestDeclarative_ProviderTakesPrecedence() {
-        var injector = new SyrupInjector(OPTIONS, new DeclarativeProviderPrecedenceModule());
-        var service = injector.GetInstance<IDeclarativeService>();
-
-        Assert.IsNotNull(service);
-        Assert.IsInstanceOf<DeclarativeServiceImpl1WithCustomId>(service);
-        Assert.AreEqual(DeclarativeProviderPrecedenceModule.ProvidedId, service.Id);
+    public void TestDeclarative_DuplicateProviderAndDeclarativeBinding() {
+        Assert.Throws<DuplicateProviderException>(() =>
+            new SyrupInjector(OPTIONS, new DeclarativeProviderPrecedenceModule()));
     }
 
     [Test]
@@ -708,14 +704,14 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestDeclarative_InjectsDependenciesIntoBoundType() {
-        // Use the Hybrid Module: Configure binds the dependency, 
+        // Use the Hybrid Module: Configure binds the dependency,
         // [Provides] forces the specific constructor for the service.
-        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectSpecificCtorHybridModule()); 
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectSpecificCtorHybridModule());
         var service = injector.GetInstance<IDeclarativeService>();
 
         Assert.IsNotNull(service);
-        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service); 
-        StringAssert.Contains("with Dependency", service.Greet()); 
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service);
+        StringAssert.Contains("with Dependency", service.Greet());
     }
 
     [Test]
