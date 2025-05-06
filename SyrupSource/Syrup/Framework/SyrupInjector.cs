@@ -104,7 +104,7 @@ namespace Syrup.Framework {
 
                     var dependencySource = dependencySources[namedDependency].DependencySource;
                     if (dependencySources.ContainsKey(namedDependency) &&
-                        (dependencySource == DependencySource.PROVIDER || dependencySource == DependencySource.DECLARATIVE)) {
+                        dependencySource is DependencySource.PROVIDER or DependencySource.DECLARATIVE) {
                         throw new DuplicateProviderException(
                             $"A declarative binding for the specified dependency '{namedDependency}' has already been registered!");
                     }
@@ -238,12 +238,10 @@ namespace Syrup.Framework {
         /// </summary>
         private void AddDependenciesForParam(NamedDependency namedDependency, List<NamedDependency> namedParameters) {
             foreach (NamedDependency namedParam in namedParameters) {
-                HashSet<NamedDependency> dependentTypes;
-                if (paramOfDependencies.ContainsKey(namedParam)) {
-                    dependentTypes = paramOfDependencies[namedParam];
-                } else {
-                    dependentTypes = new HashSet<NamedDependency>();
-                }
+                HashSet<NamedDependency> dependentTypes =
+                    paramOfDependencies.TryGetValue(namedParam, out HashSet<NamedDependency> dependency)
+                        ? dependency
+                        : new HashSet<NamedDependency>();
                 dependentTypes.Add(namedDependency);
                 paramOfDependencies[namedParam] = dependentTypes;
             }
@@ -258,10 +256,8 @@ namespace Syrup.Framework {
             Queue<NamedDependency> queue = new Queue<NamedDependency>();
             Dictionary<NamedDependency, int> currentIndegrees = new Dictionary<NamedDependency, int>(indegreesForType);
 
-            foreach (NamedDependency key in currentIndegrees.Keys) {
-                if (currentIndegrees[key] == 0) {
-                    queue.Enqueue(key);
-                }
+            foreach (NamedDependency key in currentIndegrees.Keys.Where(key => currentIndegrees[key] == 0)) {
+                queue.Enqueue(key);
             }
 
             int visitedCount = 0;
@@ -303,18 +299,13 @@ namespace Syrup.Framework {
 
             string missingDependencies = "";
             bool incompleteGraph = false;
-            foreach (NamedDependency namedDependency in indegreesForType.Keys) {
-                if (indegreesForType[namedDependency] > 0) {
 
-                    if (!IsMeaningfulDependency(namedDependency)) {
-                        //Even though we don't fully provide this dependency it's not explicitly declared by
-                        //one of the passed modules in the graph, so we can ignore it
-                        continue;
-                    }
-
-                    missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
-                    incompleteGraph = true;
-                }
+            foreach (NamedDependency namedDependency in indegreesForType.Keys
+                         .Where(namedDependency => currentIndegrees.ContainsKey(namedDependency) &&
+                                                   currentIndegrees[namedDependency] > 0)
+                         .Where(IsMeaningfulDependency)) {
+                missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
+                incompleteGraph = true;
             }
 
             if (incompleteGraph) {
@@ -390,26 +381,29 @@ namespace Syrup.Framework {
                 }
             }
 
-            if (!dependencySources.ContainsKey(dependencyToBuild)) {
-                throw new MissingDependencyException(string.Format("'{0}' is not a provided dependency!", dependencyToBuild));
+            if (!dependencySources.TryGetValue(dependencyToBuild, out DependencyInfo dependencyInfo)) {
+                throw new MissingDependencyException(
+                    $"'{dependencyToBuild}' is not a provided dependency!");
             }
 
-            DependencyInfo dependencyInfo = dependencySources[dependencyToBuild];
-            if (dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(dependencyToBuild)) {
+            if (dependencyInfo.IsSingleton &&
+                fulfilledDependencies.TryGetValue(dependencyToBuild, out object buildDependency)) {
                 if (verboseLogging) {
                     Debug.Log($"Provide singleton: {dependencyToBuild}");
                 }
-                return fulfilledDependencies[dependencyToBuild];
+                return buildDependency;
             }
 
             // Let's also check the Lazy version for this dependency.
             // Lazy containers should be singletons if the underlying type is a singleton
             // (Note: we pass in the original namedDependency param since it's already Lazy!)
-            if (isLazy && dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(namedDependency)) {
+            if (isLazy && dependencyInfo.IsSingleton &&
+                fulfilledDependencies.TryGetValue(namedDependency, out object dependency1)) {
                 if (verboseLogging) {
                     Debug.Log($"Provide lazy singleton: {namedDependency}");
                 }
-                return fulfilledDependencies[namedDependency];
+
+                return dependency1;
             }
 
             if (verboseLogging) {
