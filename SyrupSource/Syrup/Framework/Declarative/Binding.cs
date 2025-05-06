@@ -1,11 +1,16 @@
 ﻿using System;
 using Syrup.Framework.Attributes;
 
-namespace Syrup.Framework.Declarative {
+namespace Syrup.Framework {
     internal class Binding {
-        public Type Bound { get; }
-        public Named Named { get; internal set; }
+        public Type BoundService { get; }
+        public Type ImplementationType { get; internal set; }
+        public object Instance { get; internal set; }
+        public string Name { get; internal set; }
         public bool IsSingleton { get; internal set; }
-        // TODO: Implement more things if needed.
+
+        public Binding(Type boundService) {
+            BoundService = boundService ?? throw new ArgumentNullException(nameof(boundService));
+        }
     }
 }

@@ -1,15 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Syrup.Framework.Declarative {
+namespace Syrup.Framework {
     internal class Binder : IBinder {
-        private readonly HashSet<Binding> _bindings = new();
+        private readonly List<Binding> _bindings = new();
 
-        public IBindingBuilder<TService> Bind<TService>() => throw new NotImplementedException();
+        public IBindingBuilder<TService> Bind<TService>() {
+            var binding = new Binding(typeof(TService));
+            _bindings.Add(binding);
+            return new BindingBuilder<TService>(binding);
+        }
 
         public IBindingBuilder<TService> Bind<TService, TImplementation>()
-            where TImplementation : TService => throw new NotImplementedException();
+            where TImplementation : TService {
+            var binding = new Binding(typeof(TService)) {
+                ImplementationType = typeof(TImplementation)
+            };
+            _bindings.Add(binding);
+            return new BindingBuilder<TService>(binding);
+        }
 
-        internal IReadOnlyCollection<Binding> Bindings() => _bindings;
+        internal IReadOnlyCollection<Binding> GetBindings() => _bindings.AsReadOnly();
     }
 }
