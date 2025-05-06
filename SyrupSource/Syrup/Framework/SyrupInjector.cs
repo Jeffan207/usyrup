@@ -651,6 +651,8 @@ namespace Syrup.Framework {
             }
         }
 
+        // BEGIN ALL UNITY SPECIFIC INJECTION PATTERNS
+
         /// <summary>
         /// Injects all methods attached to MBs within all scenes that have methods annotated with the [Inject]
         /// attribute. In order to prevent duplicate injections this should only be called from within the
