@@ -214,6 +214,7 @@ namespace Syrup.Framework {
                 .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
 
             foreach (ConstructorInfo constructor in injectedConstructors) {
+
                 //You cannot name a constructor in constructor injection, so treat the name as null
                 NamedDependency namedDependency = new NamedDependency(null, constructor.DeclaringType);
                 bool isSingleton = constructor.DeclaringType.GetCustomAttribute<Singleton>() != null;
@@ -285,8 +286,10 @@ namespace Syrup.Framework {
             Queue<NamedDependency> queue = new Queue<NamedDependency>();
             Dictionary<NamedDependency, int> currentIndegrees = new Dictionary<NamedDependency, int>(indegreesForType);
 
-            foreach (NamedDependency key in currentIndegrees.Keys.Where(key => currentIndegrees[key] == 0)) {
-                queue.Enqueue(key);
+            foreach (NamedDependency key in indegreesForType.Keys) {
+                if (indegreesForType[key] == 0) {
+                    queue.Enqueue(key);
+                }
             }
 
             int visitedCount = 0;
