@@ -1,7 +1,6 @@
 ﻿using System;
-using Syrup.Framework.Attributes;
 
-namespace Syrup.Framework {
+namespace Syrup.Framework.Declarative {
     internal class Binding {
         public Type BoundService { get; }
         public Type ImplementationType { get; internal set; }

@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace Syrup.Framework {
+namespace Syrup.Framework.Declarative {
     internal class Binder : IBinder {
         private readonly List<Binding> _bindings = new();
 
