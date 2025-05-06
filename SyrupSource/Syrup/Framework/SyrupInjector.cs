@@ -93,6 +93,8 @@ namespace Syrup.Framework {
                 }
             }
 
+            // TODO: Implement declarative here.
+
             //Fetch all injectable constructors
             var injectedConstructors = AppDomain.CurrentDomain
                 .GetAssemblies() // Returns all currenlty loaded assemblies
@@ -339,6 +341,8 @@ namespace Syrup.Framework {
                 object[] parameters = GetConstructorParameters(constructor);
                 dependency = constructor.Invoke(parameters);
                 InjectObject(dependency, dependencyInfo.InjectableFields, dependencyInfo.InjectableMethods);
+            } else if (dependencyInfo.DependencySource == DependencySource.DECLARATIVE) {
+                // TODO: Implement declarative here.
             } else {
                 throw new UnknownDependencySourceException(
                     string.Format("Unknown DependencySource: '{0}', cannot fulfill dependency!", dependencyInfo.DependencySource));
@@ -395,6 +399,8 @@ namespace Syrup.Framework {
                     }
                 }
                 return false;
+            } else if (dependencySource == DependencySource.DECLARATIVE) {
+                // TODO: Implement declarative here.
             }
 
             return false;
@@ -419,6 +425,8 @@ namespace Syrup.Framework {
                             .Select(param => GetNamedDependencyForParam(param))
                             .ToList());
                 }
+            } else if (dependencyInfo.DependencySource == DependencySource.DECLARATIVE) {
+                // TODO: Implement declarative here.
             } else {
                 return string.Format("'{0}' invalid dependency source\n", namedDependency);
             }

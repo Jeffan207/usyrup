@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Syrup.Framework.Declarative;
 
 namespace Syrup.Framework.Model {
 
@@ -12,6 +13,7 @@ namespace Syrup.Framework.Model {
         public DependencySource DependencySource { get; set; }
         public MethodInfo ProviderMethod { get; set; }
         public ConstructorInfo Constructor { get; set; }
+        public Binding Binding { get; set; }
         public object ReferenceObject { get; set; }
         public Type Type { get; set; }
         public bool IsSingleton { get; set; }
