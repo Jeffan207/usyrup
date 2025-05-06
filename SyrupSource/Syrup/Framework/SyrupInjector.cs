@@ -102,7 +102,7 @@ namespace Syrup.Framework {
                 foreach (Binding binding in binder.GetBindings()) {
                     NamedDependency namedDependency = new NamedDependency(binding.Name, binding.BoundService);
 
-                    DependencySource dependencySource = dependencySources[namedDependency].DependencySource;
+                    var dependencySource = dependencySources[namedDependency].DependencySource;
                     if (dependencySources.ContainsKey(namedDependency) &&
                         (dependencySource == DependencySource.PROVIDER || dependencySource == DependencySource.DECLARATIVE)) {
                         throw new DuplicateProviderException(
@@ -507,25 +507,17 @@ namespace Syrup.Framework {
         /// be provided by the module, so we need to validate if they should fail graph validation or not
         /// </summary>
         private bool IsMeaningfulDependency(NamedDependency namedDependency) {
-            if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo info)) {
-                //Nothing depends on this dependency, so its not meaningful
+            if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo source)) {
                 return false;
             }
 
-            DependencySource source = info.DependencySource;
-            if (source is DependencySource.PROVIDER or DependencySource.DECLARATIVE) {
-                //Providers are always meaningful in the context of a module
-                return true;
-            }
-
-            //If this dependencies has other dependencies that need it then check if those are meaningful
-            //If one of them is, then this is also a meaningful dependency.
-            foreach (NamedDependency param in paramOfDependencies[namedDependency]) {
-                if (IsMeaningfulDependency(param)) {
-                    return true;
-                }
-            }
-            return false;
+            DependencySource dependencySource = source.DependencySource;
+            return dependencySource switch {
+                DependencySource.PROVIDER or DependencySource.DECLARATIVE => true,
+                DependencySource.CONSTRUCTOR => paramOfDependencies.TryGetValue(namedDependency,
+                    out HashSet<NamedDependency> dependency) && dependency.Any(IsMeaningfulDependency),
+                _ => false
+            };
         }
 
         private string ConstructMissingDependencyStringForType(NamedDependency namedDependency) {
