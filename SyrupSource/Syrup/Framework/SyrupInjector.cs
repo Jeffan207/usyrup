@@ -410,18 +410,16 @@ namespace Syrup.Framework {
                 }
             }
 
-            if (!dependencySources.TryGetValue(dependencyToBuild, out DependencyInfo dependencyInfo)) {
-                throw new MissingDependencyException(
-                    $"'{dependencyToBuild}' is not a provided dependency!");
+            if (!dependencySources.ContainsKey(dependencyToBuild)) {
+                throw new MissingDependencyException(string.Format("'{0}' is not a provided dependency!", dependencyToBuild));
             }
 
-            if (dependencyInfo.IsSingleton &&
-                fulfilledDependencies.TryGetValue(dependencyToBuild, out object buildDependency)) {
+            DependencyInfo dependencyInfo = dependencySources[dependencyToBuild];
+            if (dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(dependencyToBuild)) {
                 if (verboseLogging) {
                     Debug.Log($"Provide singleton: {dependencyToBuild}");
                 }
-
-                return buildDependency;
+                return fulfilledDependencies[dependencyToBuild];
             }
 
             // Let's also check the Lazy version for this dependency.
