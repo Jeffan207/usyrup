@@ -1,10 +1,12 @@
-﻿using Syrup.Framework.Attributes;
+﻿using UnityEngine;
+using System.Collections;
+using Syrup.Framework.Attributes;
 using Syrup.Framework.Containers;
 using Tests.Framework.TestData;
-using UnityEngine;
 
 //There is actually no such thing as a bad pancake, but somebody has to be the bad guy for our example
 public class BadPancake : MonoBehaviour {
+
     // BadPancakes also require lazy flour, who would have guessed!
     [Inject]
     public LazyObject<Flour> lazyFlour;

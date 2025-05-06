@@ -2,29 +2,31 @@
 using NUnit.Framework;
 using Syrup.Framework;
 using Syrup.Framework.Containers;
+using Syrup.Framework.Exceptions;
 using Tests.Framework.TestData;
 using Tests.Framework.TestModules;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 public class LazyObjectTest {
+
     [Test]
     public void TestLazyObject_InjectsWithSyrupInjection_FromManuallyCreatedLazyObject() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
         // We're passing the injector directly just for testing
         LazyObject<TastySyrup> lazyTastySyrup = new(null, syrupInjector);
-        var syrup = lazyTastySyrup.Get();
+        TastySyrup syrup = lazyTastySyrup.Get();
         Assert.NotNull(syrup);
     }
 
     [Test]
     public void TestLazyObject_CachesInjectedContainedType() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
         LazyObject<TastySyrup> lazyTastySyrup = new(null, syrupInjector);
 
-        var syrup1 = lazyTastySyrup.Get();
+        TastySyrup syrup1 = lazyTastySyrup.Get();
         Assert.NotNull(syrup1);
-        var syrup2 = lazyTastySyrup.Get();
+        TastySyrup syrup2 = lazyTastySyrup.Get();
         Assert.NotNull(syrup2);
 
         // The memory addresses of these two types should be equal
@@ -35,16 +37,17 @@ public class LazyObjectTest {
 
     [UnityTest]
     public IEnumerator TestLazyObject_UsesSyrupComponent_ToInject() {
-        var sceneComponent = new GameObject();
+        GameObject sceneComponent = new GameObject();
         sceneComponent.AddComponent<FlourModule>();
         sceneComponent.AddComponent<SyrupComponent>();
 
         yield return null;
 
         LazyObject<Flour> lazyFlour = new();
-        var flour = lazyFlour.Get();
+        Flour flour = lazyFlour.Get();
         Assert.NotNull(flour);
 
-        Object.Destroy(sceneComponent);
+        UnityEngine.Object.Destroy(sceneComponent);
     }
+
 }

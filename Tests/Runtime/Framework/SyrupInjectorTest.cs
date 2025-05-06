@@ -1,21 +1,26 @@
 using System;
+using System.Collections;
 using NUnit.Framework;
 using Syrup.Framework;
+using Syrup.Framework.Declarative;
 using Syrup.Framework.Containers;
 using Syrup.Framework.Exceptions;
 using Tests.Framework.TestData;
 using Tests.Framework.TestModules;
+using UnityEngine.TestTools;
 
 public class SyrupInjectorTest {
-    private readonly SyrupInjectorOptions OPTIONS = new() {
+
+    SyrupInjectorOptions OPTIONS = new() {
         VerboseLogging = true
     };
 
+
     [Test]
     public void TestSyrupInjector_WithSingleProviderModule() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
-        var tastySyrup1 = syrupInjector.GetInstance<TastySyrup>();
-        var tastySyrup2 = syrupInjector.GetInstance<TastySyrup>();
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
+        TastySyrup tastySyrup1 = syrupInjector.GetInstance<TastySyrup>();
+        TastySyrup tastySyrup2 = syrupInjector.GetInstance<TastySyrup>();
 
         //Two unique instances should be created
         Assert.AreNotEqual(tastySyrup1.id, tastySyrup2.id);
@@ -23,16 +28,16 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithTwoDependentProvidersModule() {
-        var syrupInjector = new SyrupInjector(new TwoDependentProvidersModule());
-        var pancake1 = syrupInjector.GetInstance<Pancake>();
-        var pancake2 = syrupInjector.GetInstance<Pancake>();
+        SyrupInjector syrupInjector = new SyrupInjector(new TwoDependentProvidersModule());
+        Pancake pancake1 = syrupInjector.GetInstance<Pancake>();
+        Pancake pancake2 = syrupInjector.GetInstance<Pancake>();
 
         //Assert both pancakes are completely different
         Assert.AreNotEqual(pancake1.id, pancake2.id);
         Assert.AreNotEqual(pancake1.flour.id, pancake2.flour.id);
 
         //Assert you can still get some flour
-        var flour = syrupInjector.GetInstance<Flour>();
+        Flour flour = syrupInjector.GetInstance<Flour>();
         Assert.AreNotEqual(pancake1.flour.id, flour.id);
     }
 
@@ -45,9 +50,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithSingleNamedProviderModule() {
-        var syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
-        var mapleSyrup1 = syrupInjector.GetInstance<TastySyrup>("MapleSyrup");
-        var mapleSyrup2 = syrupInjector.GetInstance<TastySyrup>("MapleSyrup");
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
+        TastySyrup mapleSyrup1 = syrupInjector.GetInstance<TastySyrup>("MapleSyrup");
+        TastySyrup mapleSyrup2 = syrupInjector.GetInstance<TastySyrup>("MapleSyrup");
         Assert.AreNotEqual(mapleSyrup1.id, mapleSyrup2.id);
 
         //And the unnamed version of the dependency doesn't exist
@@ -58,16 +63,16 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithTwoNamedProvidersModule() {
-        var syrupInjector = new SyrupInjector(new TwoNamedProvidersModule());
-        var pancake1 = syrupInjector.GetInstance<Pancake>("FluffyPancake");
-        var pancake2 = syrupInjector.GetInstance<Pancake>("FluffyPancake");
+        SyrupInjector syrupInjector = new SyrupInjector(new TwoNamedProvidersModule());
+        Pancake pancake1 = syrupInjector.GetInstance<Pancake>("FluffyPancake");
+        Pancake pancake2 = syrupInjector.GetInstance<Pancake>("FluffyPancake");
 
         //Assert both pancakes are completely different
         Assert.AreNotEqual(pancake1.id, pancake2.id);
         Assert.AreNotEqual(pancake1.flour.id, pancake2.flour.id);
 
         //Assert you can still get some flour
-        var flour = syrupInjector.GetInstance<Flour>("WholeGrainFlour");
+        Flour flour = syrupInjector.GetInstance<Flour>("WholeGrainFlour");
         Assert.AreNotEqual(pancake1.flour.id, flour.id);
     }
 
@@ -87,10 +92,10 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithProviderThatTakesTwoOfTheSameParameter() {
-        var syrupInjector = new SyrupInjector(new DuplicateProviderParametersModule());
-        var breakfast = syrupInjector.GetInstance<Breakfast>();
-        var pancake1 = breakfast.pancakes[0];
-        var pancake2 = breakfast.pancakes[1];
+        SyrupInjector syrupInjector = new SyrupInjector(new DuplicateProviderParametersModule());
+        Breakfast breakfast = syrupInjector.GetInstance<Breakfast>();
+        Pancake pancake1 = breakfast.pancakes[0];
+        Pancake pancake2 = breakfast.pancakes[1];
 
         //The two pancakes in our breakfast should be different pancakes!
         Assert.AreNotEqual(pancake1.id, pancake2.id);
@@ -98,9 +103,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithEmptyModuleUsesConstructorInjection() {
-        var syrupInjector = new SyrupInjector(new EmptyModule());
-        var egg1 = syrupInjector.GetInstance<Egg>();
-        var egg2 = syrupInjector.GetInstance<Egg>();
+        SyrupInjector syrupInjector = new SyrupInjector(new EmptyModule());
+        Egg egg1 = syrupInjector.GetInstance<Egg>();
+        Egg egg2 = syrupInjector.GetInstance<Egg>();
 
         //Two unique eggs should be injected
         Assert.AreNotEqual(egg1.id, egg2.id);
@@ -109,17 +114,17 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_FavorsProviderOverConstructorInjection() {
-        var syrupInjector = new SyrupInjector(new ProvidedEggModule());
-        var egg = syrupInjector.GetInstance<Egg>();
+        SyrupInjector syrupInjector = new SyrupInjector(new ProvidedEggModule());
+        Egg egg = syrupInjector.GetInstance<Egg>();
 
         Assert.AreEqual(Egg.SUNNY_SIDE_UP_EGGS, egg.style);
     }
 
     [Test]
     public void TestSyrupInjector_FollowsConstructorInjectedHeirarchy() {
-        var syrupInjector = new SyrupInjector(new EmptyModule());
-        var omelette1 = syrupInjector.GetInstance<Omelette>();
-        var omelette2 = syrupInjector.GetInstance<Omelette>();
+        SyrupInjector syrupInjector = new SyrupInjector(new EmptyModule());
+        Omelette omelette1 = syrupInjector.GetInstance<Omelette>();
+        Omelette omelette2 = syrupInjector.GetInstance<Omelette>();
 
         Assert.AreNotEqual(omelette1.id, omelette2.id);
         Assert.AreNotEqual(omelette1.egg.id, omelette2.egg.id);
@@ -127,15 +132,15 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WhereAProvidedParameterIsPassedToAnInjectedConstructor() {
-        var syrupInjector = new SyrupInjector(new ProvidedEggModule());
-        var omelette = syrupInjector.GetInstance<Omelette>();
+        SyrupInjector syrupInjector = new SyrupInjector(new ProvidedEggModule());
+        Omelette omelette = syrupInjector.GetInstance<Omelette>();
         Assert.AreEqual(Egg.SUNNY_SIDE_UP_EGGS, omelette.egg.style);
     }
 
     [Test]
     public void TestSyrupInjector_InjectsTwoOfTheSameParameterToAnInjectedConstructor() {
-        var syrupInjector = new SyrupInjector(new EmptyModule());
-        var twoEggOmelette = syrupInjector.GetInstance<TwoEggOmelette>();
+        SyrupInjector syrupInjector = new SyrupInjector(new EmptyModule());
+        TwoEggOmelette twoEggOmelette = syrupInjector.GetInstance<TwoEggOmelette>();
 
         //This omelette should be made with two different eggs!
         Assert.AreNotEqual(twoEggOmelette.egg1.id, twoEggOmelette.egg2.id);
@@ -143,7 +148,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CantGetANonInjectedObject() {
-        var syrupInjector = new SyrupInjector(new EmptyModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new EmptyModule());
         Assert.Throws<MissingDependencyException>(() => {
             syrupInjector.GetInstance<TastySyrup>();
         });
@@ -151,7 +156,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CantGetAMissingNamedDependencyEvenIfUnnamedVersionIsProvided() {
-        var syrupInjector = new SyrupInjector(new ProvidedEggModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new ProvidedEggModule());
         Assert.Throws<MissingDependencyException>(() => {
             syrupInjector.GetInstance<Egg>("BrownEgg");
         });
@@ -159,29 +164,28 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_ProvidesSameObjectWhenProviderIsMarkedAsSingleton() {
-        var syrupInjector = new SyrupInjector(new SingletonProviderModule());
-        var egg1 = syrupInjector.GetInstance<Egg>();
-        var egg2 = syrupInjector.GetInstance<Egg>();
+        SyrupInjector syrupInjector = new SyrupInjector(new SingletonProviderModule());
+        Egg egg1 = syrupInjector.GetInstance<Egg>();
+        Egg egg2 = syrupInjector.GetInstance<Egg>();
 
         Assert.AreEqual(egg1.id, egg2.id);
     }
 
     [Test]
     public void TestSyrupInjector_ProvidesSameComponentObjectsWhenProviderIsMarkedSingleton() {
-        var syrupInjector = new SyrupInjector(new SingletonWithNonSingletonDependencyModule());
-        var pancake1 = syrupInjector.GetInstance<Pancake>();
-        var pancake2 = syrupInjector.GetInstance<Pancake>();
+        SyrupInjector syrupInjector = new SyrupInjector(new SingletonWithNonSingletonDependencyModule());
+        Pancake pancake1 = syrupInjector.GetInstance<Pancake>();
+        Pancake pancake2 = syrupInjector.GetInstance<Pancake>();
 
         Assert.AreEqual(pancake1.id, pancake2.id);
         Assert.AreEqual(pancake1.flour.id, pancake2.flour.id);
     }
 
     [Test]
-    public void
-        TestSyrupInjector_ProvidesUniqueObjectsWithSingletonDependencies_ThroughConstructor() {
-        var syrupInjector = new SyrupInjector(new SingletonProviderModule());
-        var omelette1 = syrupInjector.GetInstance<Omelette>();
-        var omelette2 = syrupInjector.GetInstance<Omelette>();
+    public void TestSyrupInjector_ProvidesUniqueObjectsWithSingletonDependencies_ThroughConstructor() {
+        SyrupInjector syrupInjector = new SyrupInjector(new SingletonProviderModule());
+        Omelette omelette1  = syrupInjector.GetInstance<Omelette>();
+        Omelette omelette2  = syrupInjector.GetInstance<Omelette>();
 
         //Somehow two different omelettes are made with the same eggs!
         Assert.AreNotEqual(omelette1.id, omelette2.id);
@@ -190,9 +194,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_ProvidesUniqueObjectsWithSingletonDependencies_ThroughProvider() {
-        var syrupInjector = new SyrupInjector(new ProviderWithSingletonDependencyModule());
-        var pancake1 = syrupInjector.GetInstance<Pancake>();
-        var pancake2 = syrupInjector.GetInstance<Pancake>();
+        SyrupInjector syrupInjector = new SyrupInjector(new ProviderWithSingletonDependencyModule());
+        Pancake pancake1  = syrupInjector.GetInstance<Pancake>();
+        Pancake pancake2  = syrupInjector.GetInstance<Pancake>();
 
         Assert.AreNotEqual(pancake1.id, pancake2.id);
         Assert.AreEqual(pancake1.flour.id, pancake2.flour.id);
@@ -200,9 +204,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_ProvidesSingletonObjectThroughConstructorInjectionOnly() {
-        var syrupInjector = new SyrupInjector(new EmptyModule());
-        var butter1 = syrupInjector.GetInstance<Butter>();
-        var butter2 = syrupInjector.GetInstance<Butter>();
+        SyrupInjector syrupInjector = new SyrupInjector(new EmptyModule());
+        Butter butter1 = syrupInjector.GetInstance<Butter>();
+        Butter butter2 = syrupInjector.GetInstance<Butter>();
 
         Assert.AreEqual(butter1.id, butter2.id);
     }
@@ -210,14 +214,13 @@ public class SyrupInjectorTest {
     [Test]
     public void TestSyrupInjector_ProvidesDependenciesAcrossModules() {
         //This previously bad module is now made complete with the FlourModule!
-        var syrupInjector =
-            new SyrupInjector(new FlourModule(), new ProviderWithMissingDependencyModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new FlourModule(), new ProviderWithMissingDependencyModule());
 
         //We're able to build some pancakes
-        var pancake = syrupInjector.GetInstance<Pancake>();
+        Pancake pancake = syrupInjector.GetInstance<Pancake>();
 
         //And some flour separately
-        var flour = syrupInjector.GetInstance<Flour>();
+        Flour flour = syrupInjector.GetInstance<Flour>();
 
         Assert.AreNotEqual(pancake.flour.id, flour.id);
 
@@ -229,9 +232,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithoutAnyModules() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
-        var egg = syrupInjector.GetInstance<Egg>();
+        Egg egg = syrupInjector.GetInstance<Egg>();
         Assert.AreEqual(Egg.SCRAMBLED_EGGS, egg.style);
 
         //But again, no provided dependency, no tasty syrup
@@ -242,10 +245,12 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_WithoutFulfillingConstructorInjectionRequirements() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
         //As the saying goes, "no flour, no waffles"
-        Assert.Throws<MissingDependencyException>(() => { syrupInjector.GetInstance<Waffle>(); });
+        Assert.Throws<MissingDependencyException>(() => {
+            syrupInjector.GetInstance<Waffle>();
+        });
     }
 
     [Test]
@@ -257,9 +262,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_FulfillsMethodInjection() {
-        var syrupInjector = new SyrupInjector(new FlourModule());
-        var waffle1 = syrupInjector.GetInstance<Waffle>();
-        var waffle2 = syrupInjector.GetInstance<Waffle>();
+        SyrupInjector syrupInjector = new SyrupInjector(new FlourModule());
+        Waffle waffle1 = syrupInjector.GetInstance<Waffle>();
+        Waffle waffle2 = syrupInjector.GetInstance<Waffle>();
 
         Assert.AreNotEqual(waffle1.id, waffle2.id);
         Assert.NotNull(waffle1.butter);
@@ -269,31 +274,30 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_FulfillsMultipleInjectedMethodsOnAnObject() {
-        var syrupInjector =
-            new SyrupInjector(new TwoDependentProvidersModule(), new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new TwoDependentProvidersModule(), new SingleProviderModule());
 
-        var buffet = syrupInjector.GetInstance<Buffet>();
+        Buffet buffet = syrupInjector.GetInstance<Buffet>();
         Assert.NotNull(buffet.pancake);
         Assert.NotNull(buffet.tastySyrup);
     }
 
     [Test]
     public void TestSyrupInjector_DoesNotFulfillMethodInjectionForProviders() {
-        var syrupInjector = new SyrupInjector(new BuffetModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new BuffetModule());
 
-        var buffet = syrupInjector.GetInstance<Buffet>();
+        Buffet buffet = syrupInjector.GetInstance<Buffet>();
         Assert.Null(buffet.pancake);
         Assert.Null(buffet.tastySyrup);
     }
 
     [Test]
     public void TestSyrupInjector_FulfillsInheritedMethodInjectionsInTheRightOrder() {
-        var syrupInjector = new SyrupInjector(
+        SyrupInjector syrupInjector = new SyrupInjector(
             new TwoDependentProvidersModule(),
             new SingleProviderModule(),
             new ProvidedEggModule());
 
-        var americanBuffet = syrupInjector.GetInstance<AmericanBuffet>();
+        AmericanBuffet americanBuffet = syrupInjector.GetInstance<AmericanBuffet>();
         Assert.NotNull(americanBuffet.pancake);
         Assert.NotNull(americanBuffet.tastySyrup);
         Assert.NotNull(americanBuffet.egg);
@@ -301,7 +305,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectOnDemand() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
         EnglishMuffin englishMuffin = new();
 
@@ -314,7 +318,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_OnDemandInjectionWithInheritedInjects() {
-        var syrupInjector = new SyrupInjector(
+        SyrupInjector syrupInjector = new SyrupInjector(
             new TwoDependentProvidersModule(),
             new SingleProviderModule(),
             new ProvidedEggModule());
@@ -331,18 +335,18 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectFields() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
-        var orangeJuice = syrupInjector.GetInstance<OrangeJuice>();
+        OrangeJuice orangeJuice = syrupInjector.GetInstance<OrangeJuice>();
 
         Assert.NotNull(orangeJuice.orange);
     }
 
     [Test]
     public void TestSyrupInjector_CanInjectFieldsAndMethods() {
-        var syrupInjector = new SyrupInjector(OPTIONS);
+        SyrupInjector syrupInjector = new SyrupInjector(OPTIONS);
 
-        var lightBreakfast = syrupInjector.GetInstance<LightBreakfast>();
+        LightBreakfast lightBreakfast = syrupInjector.GetInstance<LightBreakfast>();
 
         Assert.NotNull(lightBreakfast.orangeJuice);
         Assert.NotNull(lightBreakfast.egg);
@@ -355,30 +359,30 @@ public class SyrupInjectorTest {
             new SyrupInjector().GetInstance<CanadianSyrup>();
         });
 
-        var syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
 
-        var canadianSyrup = syrupInjector.GetInstance<CanadianSyrup>();
+        CanadianSyrup canadianSyrup = syrupInjector.GetInstance<CanadianSyrup>();
         Assert.NotNull(canadianSyrup.tastySyrup);
     }
 
     [Test]
     public void TestSyrupInjector_CanInjectInheritedFieldsAndMethods() {
-        var syrupInjector = new SyrupInjector(new ProviderWithSingletonDependencyModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new ProviderWithSingletonDependencyModule());
 
-        var newJerseyBrunch = syrupInjector.GetInstance<NewJerseyBrunch>();
+        NewJerseyBrunch newJerseyBrunch = syrupInjector.GetInstance<NewJerseyBrunch>();
         Assert.NotNull(newJerseyBrunch.butter);
         Assert.NotNull(newJerseyBrunch.egg);
         Assert.NotNull(newJerseyBrunch.orangeJuice);
         Assert.NotNull(newJerseyBrunch.pancake);
 
-        var stateBrunch = syrupInjector.GetInstance<StateBrunch>();
+        StateBrunch stateBrunch = syrupInjector.GetInstance<StateBrunch>();
         Assert.NotNull(stateBrunch.butter);
         Assert.NotNull(stateBrunch.egg);
     }
 
     [Test]
     public void TestSyrupInjector_CanInjectFieldsOnDemand() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
         OrangeJuice orangeJuice = new();
 
@@ -391,7 +395,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectFieldsAndMethodsOnDemand() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
         LightBreakfast lightBreakfast = new();
 
@@ -406,9 +410,9 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectPrivateFieldsAndMethods() {
-        var syrupInjector = new SyrupInjector();
+        SyrupInjector syrupInjector = new SyrupInjector();
 
-        var privateBreakfast = syrupInjector.GetInstance<PrivateBreakfast>();
+        PrivateBreakfast privateBreakfast = syrupInjector.GetInstance<PrivateBreakfast>();
 
         Assert.NotNull(privateBreakfast.GetOrangeJuice());
         Assert.NotNull(privateBreakfast.GetEgg());
@@ -416,16 +420,16 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectLazyContainersOnDemand() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
 
-        var lazySyrup1 = syrupInjector.GetInstance<LazyObject<TastySyrup>>();
-        var lazySyrup2 = syrupInjector.GetInstance<LazyObject<TastySyrup>>();
+        LazyObject<TastySyrup> lazySyrup1 = syrupInjector.GetInstance<LazyObject<TastySyrup>>();
+        LazyObject<TastySyrup> lazySyrup2 = syrupInjector.GetInstance<LazyObject<TastySyrup>>();
 
         Assert.NotNull(lazySyrup1);
         Assert.NotNull(lazySyrup2);
 
-        var syrup1 = lazySyrup1.Get();
-        var syrup2 = lazySyrup2.Get();
+        TastySyrup syrup1 = lazySyrup1.Get();
+        TastySyrup syrup2 = lazySyrup2.Get();
 
         Assert.NotNull(syrup1);
         Assert.NotNull(syrup2);
@@ -434,25 +438,26 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectLazyContainersInConstructor() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
 
-        var lazySyrupEater1 = syrupInjector.GetInstance<LazySyrupEater>();
-        var lazySyrupEater2 = syrupInjector.GetInstance<LazySyrupEater>();
+        LazySyrupEater lazySyrupEater1 = syrupInjector.GetInstance<LazySyrupEater>();
+        LazySyrupEater lazySyrupEater2 = syrupInjector.GetInstance<LazySyrupEater>();
 
         Assert.NotNull(lazySyrupEater1);
         Assert.NotNull(lazySyrupEater2);
 
-        var syrup1 = lazySyrupEater1.syrup.Get();
-        var syrup2 = lazySyrupEater2.syrup.Get();
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
 
         Assert.NotNull(syrup1);
         Assert.NotNull(syrup2);
         Assert.AreNotEqual(syrup1.id, syrup2.id);
     }
 
+
     [Test]
     public void TestSyrupInjector_CanInjectLazyContainersInFields() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
 
         LazySyrupEaterField lazySyrupEater1 = new();
         LazySyrupEaterField lazySyrupEater2 = new();
@@ -463,8 +468,8 @@ public class SyrupInjectorTest {
         Assert.NotNull(lazySyrupEater1.syrup);
         Assert.NotNull(lazySyrupEater2.syrup);
 
-        var syrup1 = lazySyrupEater1.syrup.Get();
-        var syrup2 = lazySyrupEater2.syrup.Get();
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
 
         Assert.NotNull(syrup1);
         Assert.NotNull(syrup2);
@@ -473,7 +478,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectLazyContainersInMethods() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
 
         LazySyrupEaterMethod lazySyrupEater1 = new();
         LazySyrupEaterMethod lazySyrupEater2 = new();
@@ -484,8 +489,8 @@ public class SyrupInjectorTest {
         Assert.NotNull(lazySyrupEater1.syrup);
         Assert.NotNull(lazySyrupEater2.syrup);
 
-        var syrup1 = lazySyrupEater1.syrup.Get();
-        var syrup2 = lazySyrupEater2.syrup.Get();
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
 
         Assert.NotNull(syrup1);
         Assert.NotNull(syrup2);
@@ -494,16 +499,16 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectNamedLazyContainers() {
-        var syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleNamedProviderModule());
 
-        var lazySyrupEater1 = syrupInjector.GetInstance<LazySyrupEaterNamed>();
-        var lazySyrupEater2 = syrupInjector.GetInstance<LazySyrupEaterNamed>();
+        LazySyrupEaterNamed lazySyrupEater1 = syrupInjector.GetInstance<LazySyrupEaterNamed>();
+        LazySyrupEaterNamed lazySyrupEater2 = syrupInjector.GetInstance<LazySyrupEaterNamed>();
 
         Assert.NotNull(lazySyrupEater1);
         Assert.NotNull(lazySyrupEater2);
 
-        var syrup1 = lazySyrupEater1.syrup.Get();
-        var syrup2 = lazySyrupEater2.syrup.Get();
+        TastySyrup syrup1 = lazySyrupEater1.syrup.Get();
+        TastySyrup syrup2 = lazySyrupEater2.syrup.Get();
 
         Assert.NotNull(syrup1);
         Assert.NotNull(syrup2);
@@ -512,7 +517,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_CanInjectSingletonLazyContainers() {
-        var syrupInjector = new SyrupInjector(OPTIONS, new SingletonProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(OPTIONS, new SingletonProviderModule());
 
         LazyEggEater lazyEggEater1 = new();
         LazyEggEater lazyEggEater2 = new();
@@ -528,8 +533,8 @@ public class SyrupInjectorTest {
         // fails then consider trying a different method
         Assert.AreEqual(lazyEggEater1.egg, lazyEggEater2.egg);
 
-        var egg1 = lazyEggEater1.egg.Get();
-        var egg2 = lazyEggEater2.egg.Get();
+        Egg egg1 = lazyEggEater1.egg.Get();
+        Egg egg2 = lazyEggEater2.egg.Get();
 
         Assert.NotNull(egg1);
         Assert.NotNull(egg2);
@@ -545,18 +550,18 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestSyrupInjector_InjectsDirectlyFromManuallyCreatedLazyObject() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
         // We're passing the injector directly just for testing
         LazyObject<TastySyrup> lazyTastySyrup = new(null, syrupInjector);
-        var syrup = lazyTastySyrup.Get();
+        TastySyrup syrup = lazyTastySyrup.Get();
         Assert.NotNull(syrup);
     }
 
     [Test]
     public void TestSyrupInjector_CanInjectDependenciesThatDependOnLazyObjects() {
-        var syrupInjector = new SyrupInjector(new SingleProviderModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new SingleProviderModule());
 
-        var lazyBreakfastClub = syrupInjector.GetInstance<LazyBreakfastClub>();
+        LazyBreakfastClub lazyBreakfastClub = syrupInjector.GetInstance<LazyBreakfastClub>();
 
         Assert.NotNull(lazyBreakfastClub);
         Assert.NotNull(lazyBreakfastClub.lazySyrupEater);
@@ -564,11 +569,12 @@ public class SyrupInjectorTest {
         Assert.NotNull(lazyBreakfastClub.lazySyrupEater.syrup.Get());
     }
 
+
     [Test]
     public void TestSyrupInjector_CanInjectLazyContainersInProviderMethodParams() {
-        var syrupInjector = new SyrupInjector(new LazyProviderParamModule());
+        SyrupInjector syrupInjector = new SyrupInjector(new LazyProviderParamModule());
 
-        var lazySyrupEater = syrupInjector.GetInstance<LazySyrupEater>();
+        LazySyrupEater lazySyrupEater = syrupInjector.GetInstance<LazySyrupEater>();
 
         Assert.NotNull(lazySyrupEater);
         Assert.NotNull(lazySyrupEater.syrup);
@@ -702,14 +708,14 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestDeclarative_InjectsDependenciesIntoBoundType() {
-        // Use the Hybrid Module: Configure binds the dependency,
+        // Use the Hybrid Module: Configure binds the dependency, 
         // [Provides] forces the specific constructor for the service.
-        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectSpecificCtorHybridModule());
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectSpecificCtorHybridModule()); 
         var service = injector.GetInstance<IDeclarativeService>();
 
         Assert.IsNotNull(service);
-        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service);
-        StringAssert.Contains("with Dependency", service.Greet());
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service); 
+        StringAssert.Contains("with Dependency", service.Greet()); 
     }
 
     [Test]
@@ -759,8 +765,7 @@ public class SyrupInjectorTest {
 
         Assert.IsNotNull(lazyService1.Get());
         Assert.IsInstanceOf<DeclarativeServiceImpl1>(lazyService1.Get());
-        Assert.AreSame(lazyService1.Get(),
-            lazyService2.Get()); // Because original binding was singleton
+        Assert.AreSame(lazyService1.Get(), lazyService2.Get()); // Because original binding was singleton
 
         var directService = injector.GetInstance<IDeclarativeService>();
         Assert.AreSame(lazyService1.Get(), directService);
