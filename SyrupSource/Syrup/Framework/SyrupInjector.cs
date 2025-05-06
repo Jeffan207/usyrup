@@ -50,8 +50,6 @@ namespace Syrup.Framework {
             AddSyrupModules(modules);
         }
 
-        #region Public Methods
-
         /// <summary>
         ///     Retrieves an instance of object of type T from the dependency graph.
         ///     Objects will be built as needed.
@@ -79,10 +77,6 @@ namespace Syrup.Framework {
                 SyrupUtils.GetInjectableMethodsFromType(objectToInject.GetType());
             InjectObject(objectToInject, injectableFields, injectableMethods);
         }
-
-        #endregion
-
-        #region Internal Methods
 
         internal void AddSyrupModules(params ISyrupModule[] modules) {
             indegreesForType = new Dictionary<NamedDependency, int>();
@@ -113,7 +107,6 @@ namespace Syrup.Framework {
                     foreach (ParameterInfo param in methodInfo.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
                     }
-
                     indegreesForType.Add(namedDependency, uniqueParameters.Count());
 
                     DependencyInfo dependencyInfo = new() {
@@ -216,16 +209,14 @@ namespace Syrup.Framework {
             IEnumerable<ConstructorInfo> injectedConstructors = AppDomain.CurrentDomain
                 .GetAssemblies() // Returns all currently loaded assemblies
                 .SelectMany(x => x.GetTypes()) // returns all types defined in this assemblies
-                .Where(x =>
-                    x.IsClass &&
-                    !x.IsAbstract) // Exclude abstract classes as well since they cannot be initiated
+                .Where(x => x.IsClass && !x.IsAbstract) // Exclude abstract classes as well since they cannot be initiated
                 .SelectMany(x => x.GetConstructors())
                 .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
 
             foreach (ConstructorInfo constructor in injectedConstructors) {
                 //You cannot name a constructor in constructor injection, so treat the name as null
                 Type constructorDeclaringType = constructor.DeclaringType;
-                NamedDependency namedDependency = new NamedDependency(null, constructorDeclaringType);
+                NamedDependency namedDependency = new NamedDependency(null, constructor.DeclaringType);
                 bool isSingleton = constructorDeclaringType.GetCustomAttribute<Singleton>() != null;
 
                 if (indegreesForType.ContainsKey(namedDependency)) {
@@ -272,46 +263,8 @@ namespace Syrup.Framework {
         }
 
         /// <summary>
-        ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
-        ///     [Inject]
-        ///     attribute. In order to prevent duplicate injections this should only be called from within the
-        ///     SyrupComponent. Method injection ignores the return type of the injected method, so don't rely
-        ///     on it
-        ///     to fulfill dependencies for the dependency graph inside the injector.
-        /// </summary>
-        internal void InjectAllGameObjects() {
-            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
-
-            for (int i = 0; i < SceneManager.sceneCount; i++) {
-                Scene scene = SceneManager.GetSceneAt(i);
-                if (scene.isLoaded) {
-                    SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
-                }
-            }
-
-            InjectGameObjects(injectableMonoBehaviours);
-        }
-
-        /// <summary>
-        ///     Injects all methods in a specified scene that have methods annotated with the [Inject]
-        ///     attribute.
-        ///     Use this if you plan to dynamically add scenes that will need to be injected outside the games
-        ///     initial setup steps.
-        /// </summary>
-        internal void InjectGameObjectsInScene(Scene scene) {
-            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
-            SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
-            InjectGameObjects(injectableMonoBehaviours);
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        ///     Goes through all params for a given dependency and marks that the dependency is a type in the
-        ///     graph
-        ///     that requires it.
+        /// Goes through all params for a given dependency and marks that the dependency is a type in the graph
+        /// that requires it.
         /// </summary>
         private void AddDependenciesForParam(
             NamedDependency namedDependency, List<NamedDependency> namedParameters
@@ -327,10 +280,9 @@ namespace Syrup.Framework {
         }
 
         /// <summary>
-        ///     Uses Kahn's algorithm to topologically sort the dependency graph so we can validate it
-        ///     from bottom to top. Objects are not actually built in this phase, only validated.
-        ///     I knew that my CS education would come in handy :) (jk I actually learned this one through
-        ///     leetcode...)
+        /// Uses Kahn's algorithm to topologically sort the dependency graph so we can validate it
+        /// from bottom to top. Objects are not actually built in this phase, only validated.
+        /// I knew that my CS education would come in handy :) (jk I actually learned this one through leetcode...)
         /// </summary>
         private void ValidateDependencyGraph() {
             Queue<NamedDependency> queue = new Queue<NamedDependency>();
@@ -391,6 +343,39 @@ namespace Syrup.Framework {
                 throw new MissingDependencyException(
                     $"Incomplete dependency graph. The following dependencies are missing from the completed graph:\n{missingDependencies}");
             }
+        }
+
+        /// <summary>
+        ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
+        ///     [Inject]
+        ///     attribute. In order to prevent duplicate injections this should only be called from within the
+        ///     SyrupComponent. Method injection ignores the return type of the injected method, so don't rely
+        ///     on it
+        ///     to fulfill dependencies for the dependency graph inside the injector.
+        /// </summary>
+        internal void InjectAllGameObjects() {
+            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
+
+            for (int i = 0; i < SceneManager.sceneCount; i++) {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.isLoaded) {
+                    SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
+                }
+            }
+
+            InjectGameObjects(injectableMonoBehaviours);
+        }
+
+        /// <summary>
+        ///     Injects all methods in a specified scene that have methods annotated with the [Inject]
+        ///     attribute.
+        ///     Use this if you plan to dynamically add scenes that will need to be injected outside the games
+        ///     initial setup steps.
+        /// </summary>
+        internal void InjectGameObjectsInScene(Scene scene) {
+            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
+            SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
+            InjectGameObjects(injectableMonoBehaviours);
         }
 
         /// <summary>
@@ -664,10 +649,6 @@ namespace Syrup.Framework {
             }
         }
 
-        #endregion
-
-        #region Static Methods
-
         /// <summary>
         ///     This method (and it's sister field method) should be used for
         ///     building the dependency hierarchy. For that process we want to
@@ -745,7 +726,5 @@ namespace Syrup.Framework {
         }
 
         private static bool IsStatic(Type type) => type.IsAbstract && type.IsSealed;
-
-        #endregion
     }
 }
