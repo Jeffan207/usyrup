@@ -258,8 +258,8 @@ namespace Syrup.Framework {
             Queue<NamedDependency> queue = new Queue<NamedDependency>();
             Dictionary<NamedDependency, int> currentIndegrees = new Dictionary<NamedDependency, int>(indegreesForType);
 
-            foreach (NamedDependency key in indegreesForType.Keys) {
-                if (indegreesForType[key] == 0) {
+            foreach (NamedDependency key in currentIndegrees.Keys) {
+                if (currentIndegrees[key] == 0) {
                     queue.Enqueue(key);
                 }
             }
