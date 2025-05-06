@@ -1,20 +1,15 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Syrup.Framework.Attributes;
-using UnityEngine;
 
 namespace Tests.Framework.TestData {
     public class NewJerseyBrunch : StateBrunch {
-
         [Inject]
-        public OrangeJuice orangeJuice;    
+        public OrangeJuice orangeJuice;
 
         public Pancake pancake;
 
-
         [Inject]
-        public NewJerseyBrunch() : base() { }
+        public NewJerseyBrunch() { }
 
         [Inject]
         public void InitNewJerseyBrunch(Pancake pancake) {
@@ -24,6 +19,5 @@ namespace Tests.Framework.TestData {
 
             this.pancake = pancake;
         }
-
     }
 }

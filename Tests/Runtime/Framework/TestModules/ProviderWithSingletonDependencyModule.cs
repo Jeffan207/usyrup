@@ -4,17 +4,11 @@ using Tests.Framework.TestData;
 
 namespace Tests.Framework.TestModules {
     public class ProviderWithSingletonDependencyModule : ISyrupModule {
-
         [Provides]
-        public Pancake ProvidesPancake(Flour flour) {
-            return new Pancake(flour);
-        }
+        public Pancake ProvidesPancake(Flour flour) => new(flour);
 
         [Provides]
         [Singleton]
-        public Flour ProvidesFlour() {
-            return new Flour();
-        }
+        public Flour ProvidesFlour() => new();
     }
 }
-

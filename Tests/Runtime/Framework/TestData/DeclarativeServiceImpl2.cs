@@ -5,4 +5,4 @@ namespace Tests.Framework.TestData {
         public string Id { get; } = Guid.NewGuid().ToString();
         public string Greet() => $"Yo from ServiceImpl2 ({Id})";
     }
-} 
+}

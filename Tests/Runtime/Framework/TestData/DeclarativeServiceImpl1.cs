@@ -9,10 +9,10 @@ namespace Tests.Framework.TestData {
         public DeclarativeServiceImpl1() { }
 
         // Constructor for testing dependency injection into declaratively bound types
-        public DeclarativeServiceImpl1(DeclarativeDependency dependency) {
+        public DeclarativeServiceImpl1(DeclarativeDependency dependency) =>
             _dependency = dependency;
-        }
 
-        public string Greet() => $"Hello from ServiceImpl1 ({Id})" + (_dependency != null ? " with " + _dependency.Describe() : "");
+        public string Greet() => $"Hello from ServiceImpl1 ({Id})" +
+                                 (_dependency != null ? " with " + _dependency.Describe() : "");
     }
 }

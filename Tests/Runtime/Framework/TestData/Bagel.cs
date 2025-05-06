@@ -1,15 +1,12 @@
-﻿using UnityEngine;
-using System.Collections;
-using Tests.Framework.TestData;
-using Syrup.Framework.Attributes;
+﻿using Syrup.Framework.Attributes;
+using UnityEngine;
 
 namespace Tests.Framework.TestData {
     /// <summary>
-    /// Bagels have to be ordered separately
+    ///     Bagels have to be ordered separately
     /// </summary>
-    [SceneInjection(enabled: false)]
+    [SceneInjection(false)]
     public class Bagel : MonoBehaviour {
-
         public Butter butter;
 
         [Inject]

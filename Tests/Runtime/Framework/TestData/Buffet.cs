@@ -1,17 +1,12 @@
-using System;
 using Syrup.Framework.Attributes;
-using Tests.Framework.TestData;
 
 namespace Tests.Framework.TestData {
     public class Buffet : Identifiable {
-
-        public Pancake pancake = null;
-        public TastySyrup tastySyrup = null;
+        public Pancake pancake;
+        public TastySyrup tastySyrup;
 
         [Inject]
-        public Buffet() {
-
-        }
+        public Buffet() { }
 
         [Inject]
         public void SetupPancakes(Pancake pancake) {
@@ -24,4 +19,3 @@ namespace Tests.Framework.TestData {
         }
     }
 }
-

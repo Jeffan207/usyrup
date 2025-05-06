@@ -1,16 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using System;
 
 /// <summary>
-/// Stolen from Canada
+///     Stolen from Canada
 /// </summary>
 public class MapleSap {
-
     public readonly string id;
 
-    public MapleSap() {
-        id = System.Guid.NewGuid().ToString();
-    }
-
+    public MapleSap() => id = Guid.NewGuid().ToString();
 }

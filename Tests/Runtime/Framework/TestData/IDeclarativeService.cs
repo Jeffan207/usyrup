@@ -3,4 +3,4 @@ namespace Tests.Framework.TestData {
         string Greet();
         string Id { get; }
     }
-} 
+}

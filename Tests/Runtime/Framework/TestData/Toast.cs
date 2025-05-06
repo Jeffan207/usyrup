@@ -1,15 +1,12 @@
-﻿using UnityEngine;
-using System.Collections;
-using Tests.Framework.TestData;
-using Syrup.Framework.Attributes;
+﻿using Syrup.Framework.Attributes;
+using UnityEngine;
 
 namespace Tests.Framework.TestData {
     /// <summary>
-    /// Toast is always provided with every breakfast
+    ///     Toast is always provided with every breakfast
     /// </summary>
-    [SceneInjection(enabled: true)]
+    [SceneInjection]
     public class Toast : MonoBehaviour {
-
         public Butter butter;
 
         [Inject]

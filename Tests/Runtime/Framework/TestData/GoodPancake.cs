@@ -1,11 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using Syrup.Framework;
 using Syrup.Framework.Attributes;
 using UnityEngine;
 
 public class GoodPancake : MonoBehaviour {
-
     public PureMapleSyrup pureMapleSyrup;
 
     private void Awake() {
