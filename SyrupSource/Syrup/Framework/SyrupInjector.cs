@@ -347,12 +347,12 @@ namespace Syrup.Framework {
 
         /// <summary>
         /// This method (and it's sister field method) should be used for
-        /// injecting fields/methods into injectable objects directly. We
-        /// want the full types for those injections.
+        /// building the dependency heirarchy. For that process we want to
+        /// discard any containers so we can build the underlying types.
         /// </summary>
         private NamedDependency GetNamedDependencyForParam(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
-            string name = dependencyName?.name;
+            string name = dependencyName != null ? dependencyName.name : null;
             Type paramType = GetContainedType(param.ParameterType);
             return new NamedDependency(name, paramType);
         }
@@ -365,9 +365,9 @@ namespace Syrup.Framework {
         }
 
         /// <summary>
-        ///     This method (and it's sister field method) should be used for
-        ///     injecting fields/methods into injectable objects directly. We
-        ///     want the full types for those injections.
+        /// This method (and it's sister field method) should be used for
+        /// injecting fields/methods into injectable objects directly. We
+        /// want the full types for those injections.
         /// </summary>
         private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
