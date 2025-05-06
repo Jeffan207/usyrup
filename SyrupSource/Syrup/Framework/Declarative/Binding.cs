@@ -8,8 +8,7 @@ namespace Syrup.Framework.Declarative {
         public string Name { get; internal set; }
         public bool IsSingleton { get; internal set; }
 
-        public Binding(Type boundService) {
-            BoundService = boundService ?? throw new ArgumentNullException(nameof(boundService));
-        }
+        public Binding(Type boundService) => BoundService =
+            boundService ?? throw new ArgumentNullException(nameof(boundService));
     }
 }
