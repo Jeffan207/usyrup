@@ -450,8 +450,7 @@ namespace Syrup.Framework {
             if (isLazy) {
                 // Since we cannot just create arbitrary generic types Lazy<T> instances at runtime
                 // we need to use reflection to create them instead.
-                object lazyDependency =
-                    Activator.CreateInstance(namedDependency.type, namedDependency.name, this);
+                object lazyDependency = Activator.CreateInstance(namedDependency.type, namedDependency.name, this);
 
                 if (dependencyInfo.IsSingleton) {
                     fulfilledDependencies.Add(namedDependency, lazyDependency);
