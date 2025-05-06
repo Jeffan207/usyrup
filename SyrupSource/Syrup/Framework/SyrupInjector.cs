@@ -532,7 +532,6 @@ namespace Syrup.Framework {
             if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo dependencyInfo)) {
                 return $"'{namedDependency}' is not a known dependency.\n";
             }
-
             DependencySource source = dependencyInfo.DependencySource;
             List<NamedDependency> parameters;
             if (source == DependencySource.PROVIDER) {
