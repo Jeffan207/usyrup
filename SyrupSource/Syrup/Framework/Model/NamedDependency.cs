@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Syrup.Framework.Model {
@@ -26,7 +26,7 @@ namespace Syrup.Framework.Model {
             if (name != null) {
                 return string.Format("Named(\"{0}\")[{1}]", name, type.ToString());
             }
-            return string.Format("[{0}]",type.ToString());
+            return string.Format("[{0}]",type.ToString());            
         }
     }
 }
