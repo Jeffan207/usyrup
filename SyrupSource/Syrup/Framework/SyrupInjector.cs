@@ -90,8 +90,7 @@ namespace Syrup.Framework {
             //Fetch all provider methods declared in all provided modules
             foreach (ISyrupModule module in modules) {
                 IEnumerable<MethodInfo> providerMethods = module.GetType().GetMethods()
-                    .Where(x =>
-                        x.GetCustomAttributes(typeof(Provides), false).FirstOrDefault() != null);
+                    .Where(x => x.GetCustomAttributes(typeof(Provides), false).FirstOrDefault() != null);
 
                 foreach (MethodInfo methodInfo in providerMethods) {
                     if (IsLazyWrapped(methodInfo.ReturnType)) {
@@ -100,7 +99,7 @@ namespace Syrup.Framework {
                     }
 
                     Named dependencyName = methodInfo.GetCustomAttribute<Named>();
-                    string name = dependencyName?.name;
+                    string name = dependencyName != null ? dependencyName.name : null;
                     NamedDependency namedDependency = new NamedDependency(name, methodInfo.ReturnType);
                     bool isSingleton = methodInfo.GetCustomAttribute<Singleton>() != null;
 
@@ -115,7 +114,7 @@ namespace Syrup.Framework {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
                     }
 
-                    indegreesForType.Add(namedDependency, uniqueParameters.Count);
+                    indegreesForType.Add(namedDependency, uniqueParameters.Count());
 
                     DependencyInfo dependencyInfo = new() {
                         DependencySource = DependencySource.PROVIDER,
