@@ -12,23 +12,23 @@ using Binder = Syrup.Framework.Declarative.Binder;
 
 namespace Syrup.Framework {
     /// <summary>
-    ///     Injects syrup directly into your veins (and by syrup I mean your dependencies and by veins I
-    ///     mean your code).
+    /// Injects syrup directly into your veins (and by syrup I mean your dependencies and by veins I mean your code).
     /// </summary>
     public class SyrupInjector {
+
         //Used in Kahn's algorithm for graph validation
-        private readonly Dictionary<NamedDependency, int> indegreesForType;
+        private Dictionary<NamedDependency, int> indegreesForType;
 
         //Information regarding where the source of a dependency of a particular type
-        private readonly Dictionary<NamedDependency, DependencyInfo> dependencySources = new();
+        private readonly Dictionary<NamedDependency, DependencyInfo> dependencySources;
 
         //Given a param, map to all types that need it
-        private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies = new();
+        private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies;
 
         private bool verboseLogging = false;
 
         //Dependencies that have been fully constructed
-        private readonly Dictionary<NamedDependency, object> fulfilledDependencies = new();
+        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;
 
         public SyrupInjector(params ISyrupModule[] modules) {
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
