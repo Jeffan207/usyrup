@@ -604,7 +604,9 @@ namespace Syrup.Framework {
         /// Objects will be built as needed.
         /// </summary>
         /// <returns>The object of type T build from the dependency graph</returns>
-        public T GetInstance<T>() => GetInstance<T>(null);
+        public T GetInstance<T>() {
+            return GetInstance<T>(null);
+        }
 
         /// <summary>
         /// Returns a named dependency from the dependency graph. Passing null is equivalent to requesting an
@@ -628,30 +630,23 @@ namespace Syrup.Framework {
             InjectObject(objectToInject, injectableFields, injectableMethods);
         }
 
-        private void InjectObject<T>(
-            T objectToInject, FieldInfo[] injectableFields, MethodInfo[] injectableMethods
-        ) {
+        private void InjectObject<T>(T objectToInject, FieldInfo[] injectableFields, MethodInfo[] injectableMethods) {
             //We're making the assumption that the injectable fields/methods are ordered from base class
             //to deriving class (they should be) but we're assuming it too.
             foreach (FieldInfo injectableField in injectableFields) {
                 if (verboseLogging) {
-                    Debug.Log(
-                        $"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
+                    Debug.Log($"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
                 }
 
-                injectableField.SetValue(objectToInject,
-                    BuildDependency(GetNamedDependencyForFieldInjection(injectableField)));
+                injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForFieldInjection(injectableField)));
             }
 
             foreach (MethodInfo injectableMethod in injectableMethods) {
                 object[] parameters = GetMethodParameters(injectableMethod);
                 if (verboseLogging) {
-                    string methodParams = string.Join(",",
-                        parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
-                    Debug.Log(
-                        $"Injecting (Method Params) [{methodParams}] into [{objectToInject.GetType()}]");
+                    string methodParams = string.Join(",", parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
+                    Debug.Log($"Injecting (Method Params) [{methodParams}] into [{objectToInject.GetType()}]");
                 }
-
                 injectableMethod.Invoke(objectToInject, parameters);
             }
         }
