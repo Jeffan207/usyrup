@@ -532,68 +532,60 @@ namespace Syrup.Framework {
             if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo dependencyInfo)) {
                 return $"'{namedDependency}' is not a known dependency.\n";
             }
-
-            List<NamedDependency> parameters = new List<NamedDependency>();
-
-            switch (dependencyInfo.DependencySource) {
-                case DependencySource.PROVIDER:
-                    parameters = dependencyInfo.ProviderMethod.GetParameters()
+            DependencySource source = dependencyInfo.DependencySource;
+            List<NamedDependency> parameters;
+            if (source == DependencySource.PROVIDER) {
+                parameters = dependencyInfo.ProviderMethod.GetParameters()
+                    .Select(GetNamedDependencyForParam)
+                    .ToList();
+            } else if (source == DependencySource.CONSTRUCTOR) {
+                parameters = new();
+                parameters.AddRange(
+                    dependencyInfo.Constructor.GetParameters()
                         .Select(GetNamedDependencyForParam)
-                        .ToList();
-                    break;
-                case DependencySource.CONSTRUCTOR: {
+                        .ToList());
+                if (dependencyInfo.InjectableFields != null) {
+                    parameters.AddRange(
+                        dependencyInfo.InjectableFields.Select(GetNamedDependencyForField));
+                }
+
+                if (dependencyInfo.InjectableMethods != null) {
+                    foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
+                        parameters.AddRange(
+                            injectableMethod.GetParameters()
+                                .Select(GetNamedDependencyForParam)
+                                .ToList());
+                    }
+                }
+            } else if (source == DependencySource.DECLARATIVE && dependencyInfo.Instance != null) {
+                parameters = new();
+                // No params for instance
+            } else if (source == DependencySource.DECLARATIVE && dependencyInfo.ImplementationType != null) {
+                parameters = new();
+                if (dependencyInfo.Constructor != null) {
                     parameters.AddRange(
                         dependencyInfo.Constructor.GetParameters()
                             .Select(GetNamedDependencyForParam)
                             .ToList());
-                    if (dependencyInfo.InjectableFields != null) {
-                        parameters.AddRange(
-                            dependencyInfo.InjectableFields.Select(GetNamedDependencyForField));
-                    }
-
-                    if (dependencyInfo.InjectableMethods != null) {
-                        foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
-                            parameters.AddRange(
-                                injectableMethod.GetParameters()
-                                    .Select(GetNamedDependencyForParam)
-                                    .ToList());
-                        }
-                    }
-
-                    break;
                 }
-                case DependencySource.DECLARATIVE when dependencyInfo.Instance != null:
-                    // No params for instance
-                    break;
-                case DependencySource.DECLARATIVE when dependencyInfo.ImplementationType != null: {
-                    if (dependencyInfo.Constructor != null) {
+
+                if (dependencyInfo.InjectableFields != null) {
+                    parameters.AddRange(
+                        dependencyInfo.InjectableFields.Select(GetNamedDependencyForField));
+                }
+
+                if (dependencyInfo.InjectableMethods != null) {
+                    foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
                         parameters.AddRange(
-                            dependencyInfo.Constructor.GetParameters()
+                            injectableMethod.GetParameters()
                                 .Select(GetNamedDependencyForParam)
                                 .ToList());
                     }
-
-                    if (dependencyInfo.InjectableFields != null) {
-                        parameters.AddRange(
-                            dependencyInfo.InjectableFields.Select(GetNamedDependencyForField));
-                    }
-
-                    if (dependencyInfo.InjectableMethods != null) {
-                        foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
-                            parameters.AddRange(
-                                injectableMethod.GetParameters()
-                                    .Select(GetNamedDependencyForParam)
-                                    .ToList());
-                        }
-                    }
-
-                    break;
                 }
-                case DependencySource.DECLARATIVE:
-                    return $"'{namedDependency}' (Declarative) is misconfigured.\n";
-                default:
-                    return
-                        $"'{namedDependency}' has an unknown dependency source '{dependencyInfo.DependencySource}'.\n";
+            } else if (source == DependencySource.DECLARATIVE) {
+                return $"'{namedDependency}' (Declarative) is misconfigured.\n";
+            } else {
+                return $"'{namedDependency}' has an unknown dependency source '{source}'.\n";
             }
 
             List<string> missingParams = (from namedParam in parameters
