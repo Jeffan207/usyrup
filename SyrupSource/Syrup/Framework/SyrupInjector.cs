@@ -370,6 +370,8 @@ namespace Syrup.Framework {
         /// <param name="namedDependency">The NamedDependency object to build</param>
         /// <returns>The requested dependency or its LazyObject wrapped container</returns>
         private object BuildDependency(NamedDependency namedDependency) {
+
+
             NamedDependency dependencyToBuild = namedDependency;
             bool isLazy = IsLazyWrapped(namedDependency.type);
             if (isLazy) {
@@ -379,6 +381,7 @@ namespace Syrup.Framework {
                     Debug.Log($"Requested lazy instance of type: {dependencyToBuild}");
                 }
             }
+
 
             if (!dependencySources.TryGetValue(dependencyToBuild, out DependencyInfo dependencyInfo)) {
                 throw new MissingDependencyException(
