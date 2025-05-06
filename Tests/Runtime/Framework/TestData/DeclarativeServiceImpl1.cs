@@ -1,4 +1,5 @@
 using System;
+using Syrup.Framework.Attributes;
 
 namespace Tests.Framework.TestData {
     public class DeclarativeServiceImpl1 : IDeclarativeService {
@@ -9,6 +10,7 @@ namespace Tests.Framework.TestData {
         public DeclarativeServiceImpl1() { }
 
         // Constructor for testing dependency injection into declaratively bound types
+        [Inject]
         public DeclarativeServiceImpl1(DeclarativeDependency dependency) {
             _dependency = dependency;
         }
