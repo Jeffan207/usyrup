@@ -329,12 +329,18 @@ namespace Syrup.Framework {
 
             string missingDependencies = "";
             bool incompleteGraph = false;
-            foreach (NamedDependency namedDependency in indegreesForType.Keys
-                         .Where(namedDependency => currentIndegrees.ContainsKey(namedDependency) &&
-                                                   currentIndegrees[namedDependency] > 0)
-                         .Where(IsMeaningfulDependency)) {
-                missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
-                incompleteGraph = true;
+            foreach (NamedDependency namedDependency in indegreesForType.Keys) {
+                if (indegreesForType[namedDependency] > 0) {
+
+                    if (!IsMeaningfulDependency(namedDependency)) {
+                        //Even though we don't fully provide this dependency it's not explicitly declared by
+                        //one of the passed modules in the graph, so we can ignore it
+                        continue;
+                    }
+
+                    missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
+                    incompleteGraph = true;
+                }
             }
 
             if (incompleteGraph) {
