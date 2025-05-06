@@ -137,15 +137,9 @@ namespace Syrup.Framework {
                 foreach (Binding binding in binder.GetBindings()) {
                     NamedDependency namedDependency = new NamedDependency(binding.Name, binding.BoundService);
 
-                    if (dependencySources.ContainsKey(namedDependency) &&
-                        dependencySources[namedDependency].DependencySource ==
-                        DependencySource.PROVIDER) {
-                        if (verboseLogging) {
-                            Debug.Log(
-                                $"Declarative binding for '{namedDependency}' skipped as a Provider already exists for it.");
-                        }
-
-                        continue;
+                    if (dependencySources.ContainsKey(namedDependency) && dependencySources[namedDependency].DependencySource == DependencySource.PROVIDER) {
+                        throw new DuplicateProviderException(
+                            $"A declarative binding for the specified dependency '{namedDependency}' has already been registered!");
                     }
 
                     if (dependencySources.ContainsKey(namedDependency) &&
