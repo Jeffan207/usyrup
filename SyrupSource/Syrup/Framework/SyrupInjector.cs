@@ -350,14 +350,14 @@ namespace Syrup.Framework {
         private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
             string name = dependencyName != null ? dependencyName.name : null;
-            Type paramType = GetContainedType(param.ParameterType);
+            Type paramType = param.ParameterType;
             return new NamedDependency(name, paramType);
         }
 
         private NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) {
             Named dependencyName = field.GetCustomAttribute<Named>();
             string name = dependencyName != null ? dependencyName.name : null;
-            Type fieldType = GetContainedType(field.FieldType);
+            Type fieldType = field.FieldType;
             return new NamedDependency(name, fieldType);
         }
 
