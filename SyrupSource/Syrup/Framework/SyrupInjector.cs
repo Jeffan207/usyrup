@@ -230,14 +230,12 @@ namespace Syrup.Framework {
                     uniqueParameters.Add(GetNamedDependencyForParam(param));
                 }
 
-                FieldInfo[] injectableFields =
-                    SyrupUtils.GetInjectableFieldsFromType(constructorDeclaringType);
+                FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(constructorDeclaringType);
                 foreach (FieldInfo injectableField in injectableFields) {
                     uniqueParameters.Add(GetNamedDependencyForField(injectableField));
                 }
 
-                MethodInfo[] injectableMethods =
-                    SyrupUtils.GetInjectableMethodsFromType(constructorDeclaringType);
+                MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructorDeclaringType);
                 foreach (MethodInfo injectableMethod in injectableMethods) {
                     foreach (ParameterInfo param in injectableMethod.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -390,7 +388,7 @@ namespace Syrup.Framework {
             return type;
         }
 
-        private static bool IsLazyWrapped(Type type) {
+        private bool IsLazyWrapped(Type type) {
             return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(LazyObject<>));
         }
 
