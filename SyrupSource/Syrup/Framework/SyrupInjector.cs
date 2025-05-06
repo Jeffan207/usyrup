@@ -431,13 +431,11 @@ namespace Syrup.Framework {
             // Let's also check the Lazy version for this dependency.
             // Lazy containers should be singletons if the underlying type is a singleton
             // (Note: we pass in the original namedDependency param since it's already Lazy!)
-            if (isLazy && dependencyInfo.IsSingleton &&
-                fulfilledDependencies.TryGetValue(namedDependency, out object dependency1)) {
+            if (isLazy && dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(namedDependency)) {
                 if (verboseLogging) {
                     Debug.Log($"Provide lazy singleton: {namedDependency}");
                 }
-
-                return dependency1;
+                return fulfilledDependencies[namedDependency];
             }
 
             if (verboseLogging) {
