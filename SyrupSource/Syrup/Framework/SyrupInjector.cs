@@ -404,7 +404,7 @@ namespace Syrup.Framework {
                 parameters = dependencyInfo.ProviderMethod.GetParameters()
                     .Select(param => GetNamedDependencyForParam(param))
                     .ToList();
-            } else {
+            } else if (dependencyInfo.DependencySource == DependencySource.CONSTRUCTOR) {
                 parameters = new();
                 parameters.AddRange(
                     dependencyInfo.Constructor.GetParameters()
@@ -416,8 +416,10 @@ namespace Syrup.Framework {
                             .Select(param => GetNamedDependencyForParam(param))
                             .ToList());
                 }
-
+            } else {
+                return string.Format("'{0}' invalid dependency source\n", namedDependency);
             }
+
             List<string> missingParams = new();
             foreach (NamedDependency namedParam in parameters) {
                 if (!dependencySources.ContainsKey(namedParam) ||
@@ -447,14 +449,14 @@ namespace Syrup.Framework {
         /// <typeparam name="T">The name of the type if explicitly given one with the [Named] attribute</typeparam>
         /// <returns></returns>
         public T GetInstance<T>(string name) {
-            NamedDependency namedDependency = new NamedDependency(name, typeof(T));            
+            NamedDependency namedDependency = new NamedDependency(name, typeof(T));
             object dependency = BuildDependency(namedDependency);
             return (T)dependency;
         }
 
         /// <summary>
         /// Injects dependencies into the provided object by invoking any inject related methods.
-        /// </summary>        
+        /// </summary>
         /// <param name="objectToInject">The object to be injected</param>
         public void Inject<T>(T objectToInject) {
             FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(objectToInject.GetType());
@@ -474,7 +476,7 @@ namespace Syrup.Framework {
 
             foreach (MethodInfo injectableMethod in injectableMethods) {
                 object[] parameters = GetMethodParameters(injectableMethod);
-                if (verboseLogging) {                    
+                if (verboseLogging) {
                     string methodParams = string.Join(",", parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
                     Debug.Log(string.Format("Injecting (Method Params) [{0}] into [{1}]", methodParams, objectToInject.GetType()));
                 }
