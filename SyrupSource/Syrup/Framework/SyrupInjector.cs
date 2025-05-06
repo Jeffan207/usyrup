@@ -383,11 +383,16 @@ namespace Syrup.Framework {
             return new NamedDependency(name, fieldType);
         }
 
-        private Type GetContainedType(Type type) =>
-            IsLazyWrapped(type) ? type.GetGenericArguments()[0] : type;
+        private Type GetContainedType(Type type) {
+            if (IsLazyWrapped(type)) {
+                return type.GetGenericArguments()[0];
+            }
+            return type;
+        }
 
-        private static bool IsLazyWrapped(Type type) =>
-            type.IsGenericType && type.GetGenericTypeDefinition() == typeof(LazyObject<>);
+        private static bool IsLazyWrapped(Type type) {
+            return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(LazyObject<>));
+        }
 
         /// <summary>
         ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
