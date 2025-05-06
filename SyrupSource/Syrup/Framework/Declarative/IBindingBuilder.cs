@@ -3,7 +3,7 @@
     ///     Builder interface for configuring a specific binding rule.
     /// </summary>
     /// <typeparam name="TService">The type being bound.</typeparam>
-    public interface IBindingBuilder<TService> {
+    public interface IBindingBuilder<in TService> {
         /// <summary>
         ///     Specifies the implementation type for the binding rule.
         ///     When <see cref="TService" /> is requested , the container will create an instance of
