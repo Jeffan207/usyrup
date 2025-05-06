@@ -16,7 +16,7 @@
         /// <typeparam name="TService">The type to bind (often an interface or base class).</typeparam>
         /// <typeparam name="TImplementation">The implementation type.</typeparam>
         /// <returns>An <see cref="IBindingBuilder{TService}" /> to continue the configuration.</returns>
-        IBindingBuilder<TService> BindTo<TService, TImplementation>()
+        IBindingBuilder<TService> Bind<TService, TImplementation>()
             where TImplementation : TService;
     }
 }
