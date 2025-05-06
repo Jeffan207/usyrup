@@ -1,4 +1,7 @@
-﻿namespace Syrup.Framework.Containers {
+using System;
+using Syrup.Framework;
+
+namespace Syrup.Framework.Containers {
 
     /// <summary>
     /// A lazy container is a wrapper over the dependency that lets you delay
@@ -25,7 +28,7 @@
         /// Option 1 - LazyObject Constructor Shortcut (Not Recommended for Singleton Dependencies):
         /// <pre>
         /// LazyObject<TastySyrup> lazySyrup = new LazyObject<TastySyrup>();
-        /// </pre>
+        /// </pre> 
         ///
         /// Option 2 - Use SyrupInjector to get LazyObject (Recommended in General):
         /// <pre>
@@ -37,14 +40,14 @@
         /// necessary wrapped dependency. Just provide a regular version of the dependency
         /// and in the injectable class request a LazyObject version of it. USyrup will
         /// do the rest of the work to provide it.
-        ///
+        /// 
         /// </summary>
         public LazyObject() {
             this.name = null;
         }
 
         public LazyObject(string name) {
-            this.name = name;
+            this.name = name;            
         }
 
         /// <summary>
@@ -64,7 +67,7 @@
                 } else {
                     containedType = SyrupComponent.SyrupInjector.GetInstance<T>(name);
                 }
-
+                
             }
             return containedType;
         }
