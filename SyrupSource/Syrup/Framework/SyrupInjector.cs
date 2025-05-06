@@ -215,9 +215,8 @@ namespace Syrup.Framework {
 
             foreach (ConstructorInfo constructor in injectedConstructors) {
                 //You cannot name a constructor in constructor injection, so treat the name as null
-                Type constructorDeclaringType = constructor.DeclaringType;
                 NamedDependency namedDependency = new NamedDependency(null, constructor.DeclaringType);
-                bool isSingleton = constructorDeclaringType.GetCustomAttribute<Singleton>() != null;
+                bool isSingleton = constructor.DeclaringType.GetCustomAttribute<Singleton>() != null;
 
                 if (indegreesForType.ContainsKey(namedDependency)) {
                     //Providers take precedence over constructors for injection.
@@ -230,12 +229,12 @@ namespace Syrup.Framework {
                     uniqueParameters.Add(GetNamedDependencyForParam(param));
                 }
 
-                FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(constructorDeclaringType);
+                FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(constructor.DeclaringType);
                 foreach (FieldInfo injectableField in injectableFields) {
                     uniqueParameters.Add(GetNamedDependencyForField(injectableField));
                 }
 
-                MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructorDeclaringType);
+                MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructor.DeclaringType);
                 foreach (MethodInfo injectableMethod in injectableMethods) {
                     foreach (ParameterInfo param in injectableMethod.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -247,7 +246,7 @@ namespace Syrup.Framework {
                 DependencyInfo dependencyInfo = new() {
                     DependencySource = DependencySource.CONSTRUCTOR,
                     Constructor = constructor,
-                    Type = constructorDeclaringType,
+                    Type = constructor.DeclaringType,
                     IsSingleton = isSingleton,
                     InjectableMethods = injectableMethods,
                     InjectableFields = injectableFields
