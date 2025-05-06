@@ -393,42 +393,9 @@ namespace Syrup.Framework {
         }
 
         /// <summary>
-        ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
-        ///     [Inject]
-        ///     attribute. In order to prevent duplicate injections this should only be called from within the
-        ///     SyrupComponent. Method injection ignores the return type of the injected method, so don't rely
-        ///     on it
-        ///     to fulfill dependencies for the dependency graph inside the injector.
-        /// </summary>
-        internal void InjectAllGameObjects() {
-            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
-
-            for (int i = 0; i < SceneManager.sceneCount; i++) {
-                Scene scene = SceneManager.GetSceneAt(i);
-                if (scene.isLoaded) {
-                    SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
-                }
-            }
-
-            InjectGameObjects(injectableMonoBehaviours);
-        }
-
-        /// <summary>
-        ///     Injects all methods in a specified scene that have methods annotated with the [Inject]
-        ///     attribute.
-        ///     Use this if you plan to dynamically add scenes that will need to be injected outside the games
-        ///     initial setup steps.
-        /// </summary>
-        internal void InjectGameObjectsInScene(Scene scene) {
-            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
-            SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
-            InjectGameObjects(injectableMonoBehaviours);
-        }
-
-        /// <summary>
-        ///     Given a named dependency go through and iterate through the dependency's
-        ///     required dependencies and build them, ultimately returning the requested
-        ///     dependency.
+        /// Given a named dependency go through and iterate through the dependency's
+        /// required dependencies and build them, ultimately returning the requested
+        /// dependency.
         /// </summary>
         /// <param name="namedDependency">The NamedDependency object to build</param>
         /// <returns>The requested dependency or its LazyObject wrapped container</returns>
@@ -537,6 +504,39 @@ namespace Syrup.Framework {
             }
 
             return dependency;
+        }
+
+        /// <summary>
+        ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
+        ///     [Inject]
+        ///     attribute. In order to prevent duplicate injections this should only be called from within the
+        ///     SyrupComponent. Method injection ignores the return type of the injected method, so don't rely
+        ///     on it
+        ///     to fulfill dependencies for the dependency graph inside the injector.
+        /// </summary>
+        internal void InjectAllGameObjects() {
+            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
+
+            for (int i = 0; i < SceneManager.sceneCount; i++) {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.isLoaded) {
+                    SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
+                }
+            }
+
+            InjectGameObjects(injectableMonoBehaviours);
+        }
+
+        /// <summary>
+        ///     Injects all methods in a specified scene that have methods annotated with the [Inject]
+        ///     attribute.
+        ///     Use this if you plan to dynamically add scenes that will need to be injected outside the games
+        ///     initial setup steps.
+        /// </summary>
+        internal void InjectGameObjectsInScene(Scene scene) {
+            List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
+            SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
+            InjectGameObjects(injectableMonoBehaviours);
         }
 
         private object[] GetMethodParameters(MethodInfo method) {
