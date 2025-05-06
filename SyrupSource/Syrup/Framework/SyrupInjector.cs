@@ -28,9 +28,9 @@ namespace Syrup.Framework {
         private bool verboseLogging = false;
 
         //Dependencies that have been fully constructed
-        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;        
+        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;
 
-        public SyrupInjector(params ISyrupModule[] modules) {            
+        public SyrupInjector(params ISyrupModule[] modules) {
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
             paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
             fulfilledDependencies = new Dictionary<NamedDependency, object>();
@@ -73,7 +73,7 @@ namespace Syrup.Framework {
                         throw new DuplicateProviderException
                             (string.Format("A provider for the specified dependency '{0}' already exists!",
                             namedDependency));
-                    }                   
+                    }
                     HashSet<NamedDependency> uniqueParameters = new();
                     foreach (ParameterInfo param in methodInfo.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -123,7 +123,7 @@ namespace Syrup.Framework {
                     uniqueParameters.Add(GetNamedDependencyForField(injectableField));
                 }
 
-                var injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructor.DeclaringType);               
+                var injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructor.DeclaringType);
                 foreach (MethodInfo injectableMethod in injectableMethods) {
                     foreach (ParameterInfo param in injectableMethod.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -145,7 +145,7 @@ namespace Syrup.Framework {
                 AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
             }
 
-            ValidateDependencyGraph();  
+            ValidateDependencyGraph();
         }
 
         /// <summary>
@@ -219,7 +219,7 @@ namespace Syrup.Framework {
                         "Incomplete dependency graph. The following dependencies are missing from the completed graph:\n{0}",
                     missingDependencies));
             }
-        }        
+        }
 
         /// <summary>
         /// This method (and it's sister field method) should be used for
@@ -228,7 +228,7 @@ namespace Syrup.Framework {
         /// </summary>
         private NamedDependency GetNamedDependencyForParam(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
-            string name = dependencyName != null ? dependencyName.name : null;           
+            string name = dependencyName != null ? dependencyName.name : null;
             Type paramType = GetContainedType(param.ParameterType);
             return new NamedDependency(name, paramType);
         }
@@ -280,14 +280,14 @@ namespace Syrup.Framework {
 
             NamedDependency dependencyToBuild = namedDependency;
             bool isLazy = IsLazyWrapped(namedDependency.type);
-            if (isLazy) {                
-                Type containedType = GetContainedType(namedDependency.type);                
+            if (isLazy) {
+                Type containedType = GetContainedType(namedDependency.type);
                 dependencyToBuild = new NamedDependency(namedDependency.name, containedType);
                 if (verboseLogging) {
                     Debug.Log(string.Format("Requested lazy instance of type: {0}", dependencyToBuild));
                 }
             }
-            
+
 
             if (!dependencySources.ContainsKey(dependencyToBuild)) {
                 throw new MissingDependencyException(string.Format("'{0}' is not a provided dependency!", dependencyToBuild));
