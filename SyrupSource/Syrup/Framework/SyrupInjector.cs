@@ -370,7 +370,7 @@ namespace Syrup.Framework {
                                                       ConstructMissingDependencyStringForType(
                                                           namedDependency));
                 if (!string.IsNullOrEmpty(missingDependenciesCycle)) {
-                    throw new CircularDependencyException(
+                    throw new MissingDependencyException(
                         $"Circular dependency detected or missing dependencies preventing graph completion. problematic dependencies:\n{missingDependenciesCycle}");
                 }
             }
