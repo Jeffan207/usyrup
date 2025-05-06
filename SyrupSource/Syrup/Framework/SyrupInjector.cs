@@ -16,14 +16,24 @@ namespace Syrup.Framework {
     ///     mean your code).
     /// </summary>
     public class SyrupInjector {
-        private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> _paramOfDependencies = new();
-        private readonly Dictionary<NamedDependency, DependencyInfo> _dependencySources = new();
-        private readonly Dictionary<NamedDependency, object> _fulfilledDependencies = new();
-        private Dictionary<NamedDependency, int> _indegreesForType;
-        private readonly bool _verboseLogging;
+        //Used in Kahn's algorithm for graph validation
+        private Dictionary<NamedDependency, int> indegreesForType;
+
+        //Information regarding where the source of a dependency of a particular type
+        private Dictionary<NamedDependency, DependencyInfo> dependencySources = new();
+
+        //Given a param, map to all types that need it
+        private Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies = new();
+
+        private bool verboseLogging = false;
+
+        //Dependencies that have been fully constructed
+        private Dictionary<NamedDependency, object> fulfilledDependencies = new();
 
         public SyrupInjector(params ISyrupModule[] modules) {
-            _verboseLogging = false;
+            dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
+            paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
+            fulfilledDependencies = new Dictionary<NamedDependency, object>();
 
             AddSyrupModules(modules);
         }
@@ -31,7 +41,10 @@ namespace Syrup.Framework {
         public SyrupInjector(
             SyrupInjectorOptions syrupInjectorOptions, params ISyrupModule[] modules
         ) {
-            _verboseLogging = syrupInjectorOptions.VerboseLogging;
+            verboseLogging = syrupInjectorOptions.VerboseLogging;
+            dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
+            paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
+            fulfilledDependencies = new Dictionary<NamedDependency, object>();
 
             AddSyrupModules(modules);
         }
@@ -71,7 +84,7 @@ namespace Syrup.Framework {
         #region Internal Methods
 
         internal void AddSyrupModules(params ISyrupModule[] modules) {
-            _indegreesForType = new Dictionary<NamedDependency, int>();
+            indegreesForType = new Dictionary<NamedDependency, int>();
 
             //Fetch all provider methods declared in all provided modules
             foreach (var module in modules) {
@@ -91,7 +104,7 @@ namespace Syrup.Framework {
                     var isSingleton = methodInfo.GetCustomAttribute<Singleton>() != null;
 
                     //This is a convenient place to check if multiple providers for a single type have been declared
-                    if (_indegreesForType.ContainsKey(namedDependency)) {
+                    if (indegreesForType.ContainsKey(namedDependency)) {
                         throw new DuplicateProviderException
                             ($"A provider for the specified dependency '{namedDependency}' already exists!");
                     }
@@ -101,7 +114,7 @@ namespace Syrup.Framework {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
                     }
 
-                    _indegreesForType.Add(namedDependency, uniqueParameters.Count);
+                    indegreesForType.Add(namedDependency, uniqueParameters.Count);
 
                     DependencyInfo dependencyInfo = new() {
                         DependencySource = DependencySource.PROVIDER,
@@ -111,7 +124,7 @@ namespace Syrup.Framework {
                         IsSingleton = isSingleton
                     };
 
-                    _dependencySources[namedDependency] = dependencyInfo;
+                    dependencySources[namedDependency] = dependencyInfo;
                     AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
                 }
             }
@@ -124,10 +137,10 @@ namespace Syrup.Framework {
                 foreach (var binding in binder.GetBindings()) {
                     var namedDependency = new NamedDependency(binding.Name, binding.BoundService);
 
-                    if (_dependencySources.ContainsKey(namedDependency) &&
-                        _dependencySources[namedDependency].DependencySource ==
+                    if (dependencySources.ContainsKey(namedDependency) &&
+                        dependencySources[namedDependency].DependencySource ==
                         DependencySource.PROVIDER) {
-                        if (_verboseLogging) {
+                        if (verboseLogging) {
                             Debug.Log(
                                 $"Declarative binding for '{namedDependency}' skipped as a Provider already exists for it.");
                         }
@@ -135,8 +148,8 @@ namespace Syrup.Framework {
                         continue;
                     }
 
-                    if (_dependencySources.ContainsKey(namedDependency) &&
-                        _dependencySources[namedDependency].DependencySource ==
+                    if (dependencySources.ContainsKey(namedDependency) &&
+                        dependencySources[namedDependency].DependencySource ==
                         DependencySource.DECLARATIVE) {
                         throw new DuplicateProviderException(
                             $"A declarative binding for the specified dependency '{namedDependency}' has already been registered!");
@@ -204,8 +217,8 @@ namespace Syrup.Framework {
                             $"Declarative binding for '{namedDependency}' is incomplete. Must call To<TImplementation>() or ToInstance().");
                     }
 
-                    _indegreesForType[namedDependency] = requiredParamsCount;
-                    _dependencySources[namedDependency] = dependencyInfo;
+                    indegreesForType[namedDependency] = requiredParamsCount;
+                    dependencySources[namedDependency] = dependencyInfo;
                     AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
                 }
             }
@@ -226,7 +239,7 @@ namespace Syrup.Framework {
                 var namedDependency = new NamedDependency(null, constructorDeclaringType);
                 var isSingleton = constructorDeclaringType.GetCustomAttribute<Singleton>() != null;
 
-                if (_indegreesForType.ContainsKey(namedDependency)) {
+                if (indegreesForType.ContainsKey(namedDependency)) {
                     //Providers take precedence over constructors for injection.
                     //If both are provided, ignore the constructor.
                     continue;
@@ -251,7 +264,7 @@ namespace Syrup.Framework {
                     }
                 }
 
-                _indegreesForType.Add(namedDependency, uniqueParameters.Count());
+                indegreesForType.Add(namedDependency, uniqueParameters.Count());
 
                 DependencyInfo dependencyInfo = new() {
                     DependencySource = DependencySource.CONSTRUCTOR,
@@ -262,7 +275,7 @@ namespace Syrup.Framework {
                     InjectableFields = injectableFields
                 };
 
-                _dependencySources[namedDependency] = dependencyInfo;
+                dependencySources[namedDependency] = dependencyInfo;
                 AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
             }
 
@@ -316,11 +329,11 @@ namespace Syrup.Framework {
         ) {
             foreach (var namedParam in namedParameters) {
                 var dependentTypes =
-                    _paramOfDependencies.TryGetValue(namedParam, out var dependency)
+                    paramOfDependencies.TryGetValue(namedParam, out var dependency)
                         ? dependency
                         : new HashSet<NamedDependency>();
                 dependentTypes.Add(namedDependency);
-                _paramOfDependencies[namedParam] = dependentTypes;
+                paramOfDependencies[namedParam] = dependentTypes;
             }
         }
 
@@ -332,7 +345,7 @@ namespace Syrup.Framework {
         /// </summary>
         private void ValidateDependencyGraph() {
             var queue = new Queue<NamedDependency>();
-            var currentIndegrees = new Dictionary<NamedDependency, int>(_indegreesForType);
+            var currentIndegrees = new Dictionary<NamedDependency, int>(indegreesForType);
 
             foreach (var key in currentIndegrees.Keys.Where(key => currentIndegrees[key] == 0)) {
                 queue.Enqueue(key);
@@ -343,7 +356,7 @@ namespace Syrup.Framework {
                 var namedDependency = queue.Dequeue();
                 visitedCount++;
 
-                if (!_paramOfDependencies.TryGetValue(namedDependency, out var dependentTypes)) {
+                if (!paramOfDependencies.TryGetValue(namedDependency, out var dependentTypes)) {
                     continue;
                 }
 
@@ -377,7 +390,7 @@ namespace Syrup.Framework {
 
             var missingDependencies = "";
             var incompleteGraph = false;
-            foreach (var namedDependency in _indegreesForType.Keys
+            foreach (var namedDependency in indegreesForType.Keys
                          .Where(namedDependency => currentIndegrees.ContainsKey(namedDependency) &&
                                                    currentIndegrees[namedDependency] > 0)
                          .Where(IsMeaningfulDependency)) {
@@ -404,19 +417,19 @@ namespace Syrup.Framework {
             if (isLazy) {
                 var containedType = GetContainedType(namedDependency.Type);
                 dependencyToBuild = new NamedDependency(namedDependency.Name, containedType);
-                if (_verboseLogging) {
+                if (verboseLogging) {
                     Debug.Log($"Requested lazy instance of type: {dependencyToBuild}");
                 }
             }
 
-            if (!_dependencySources.TryGetValue(dependencyToBuild, out var dependencyInfo)) {
+            if (!dependencySources.TryGetValue(dependencyToBuild, out var dependencyInfo)) {
                 throw new MissingDependencyException(
                     $"'{dependencyToBuild}' is not a provided dependency!");
             }
 
             if (dependencyInfo.IsSingleton &&
-                _fulfilledDependencies.TryGetValue(dependencyToBuild, out var buildDependency)) {
-                if (_verboseLogging) {
+                fulfilledDependencies.TryGetValue(dependencyToBuild, out var buildDependency)) {
+                if (verboseLogging) {
                     Debug.Log($"Provide singleton: {dependencyToBuild}");
                 }
 
@@ -427,15 +440,15 @@ namespace Syrup.Framework {
             // Lazy containers should be singletons if the underlying type is a singleton
             // (Note: we pass in the original namedDependency param since it's already Lazy!)
             if (isLazy && dependencyInfo.IsSingleton &&
-                _fulfilledDependencies.TryGetValue(namedDependency, out var dependency1)) {
-                if (_verboseLogging) {
+                fulfilledDependencies.TryGetValue(namedDependency, out var dependency1)) {
+                if (verboseLogging) {
                     Debug.Log($"Provide lazy singleton: {namedDependency}");
                 }
 
                 return dependency1;
             }
 
-            if (_verboseLogging) {
+            if (verboseLogging) {
                 Debug.Log($"Constructing object: {dependencyToBuild}");
             }
 
@@ -449,7 +462,7 @@ namespace Syrup.Framework {
                     Activator.CreateInstance(namedDependency.Type, namedDependency.Name, this);
 
                 if (dependencyInfo.IsSingleton) {
-                    _fulfilledDependencies.Add(namedDependency, lazyDependency);
+                    fulfilledDependencies.Add(namedDependency, lazyDependency);
                 }
 
                 return lazyDependency;
@@ -499,7 +512,7 @@ namespace Syrup.Framework {
             }
 
             if (dependencyInfo.IsSingleton) {
-                _fulfilledDependencies.Add(dependencyToBuild, dependency);
+                fulfilledDependencies.Add(dependencyToBuild, dependency);
             }
 
             return dependency;
@@ -536,21 +549,21 @@ namespace Syrup.Framework {
         ///     be provided by the module, so we need to validate if they should fail graph validation or not
         /// </summary>
         private bool IsMeaningfulDependency(NamedDependency namedDependency) {
-            if (!_dependencySources.TryGetValue(namedDependency, out var source)) {
+            if (!dependencySources.TryGetValue(namedDependency, out var source)) {
                 return false;
             }
 
             var dependencySource = source.DependencySource;
             return dependencySource switch {
                 DependencySource.PROVIDER or DependencySource.DECLARATIVE => true,
-                DependencySource.CONSTRUCTOR => _paramOfDependencies.TryGetValue(namedDependency,
+                DependencySource.CONSTRUCTOR => paramOfDependencies.TryGetValue(namedDependency,
                     out var dependency) && dependency.Any(IsMeaningfulDependency),
                 _ => false
             };
         }
 
         private string ConstructMissingDependencyStringForType(NamedDependency namedDependency) {
-            if (!_dependencySources.TryGetValue(namedDependency, out var dependencyInfo)) {
+            if (!dependencySources.TryGetValue(namedDependency, out var dependencyInfo)) {
                 return $"'{namedDependency}' is not a known dependency.\n";
             }
 
@@ -618,9 +631,9 @@ namespace Syrup.Framework {
             }
 
             var missingParams = (from namedParam in parameters
-                where !_dependencySources.ContainsKey(namedParam) ||
-                      (_indegreesForType.ContainsKey(namedParam) &&
-                       _indegreesForType[namedParam] > 0 && IsMeaningfulDependency(namedParam))
+                where !dependencySources.ContainsKey(namedParam) ||
+                      (indegreesForType.ContainsKey(namedParam) &&
+                       indegreesForType[namedParam] > 0 && IsMeaningfulDependency(namedParam))
                 select namedParam.ToString()).ToList();
 
             return missingParams.Any()
@@ -634,7 +647,7 @@ namespace Syrup.Framework {
             //We're making the assumption that the injectable fields/methods are ordered from base class
             //to deriving class (they should be) but we're assuming it too.
             foreach (var injectableField in injectableFields) {
-                if (_verboseLogging) {
+                if (verboseLogging) {
                     Debug.Log(
                         $"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
                 }
@@ -645,7 +658,7 @@ namespace Syrup.Framework {
 
             foreach (var injectableMethod in injectableMethods) {
                 var parameters = GetMethodParameters(injectableMethod);
-                if (_verboseLogging) {
+                if (verboseLogging) {
                     var methodParams = string.Join(",",
                         parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
                     Debug.Log(
