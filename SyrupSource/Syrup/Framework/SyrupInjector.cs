@@ -643,6 +643,7 @@ namespace Syrup.Framework {
             }
         }
 
+
         // BEGIN ALL UNITY SPECIFIC INJECTION PATTERNS
 
         /// <summary>
