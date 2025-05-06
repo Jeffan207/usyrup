@@ -9,6 +9,10 @@
         /// This dependency is provided via constructor injection. It may also have members that need to be
         /// injected in addition to the constructor (such as methods or fields)
         /// </summary>
-        CONSTRUCTOR
+        CONSTRUCTOR,
+        /// <summary>
+        /// This dependency is provided via <see cref="Syrup.Framework.Declarative.IBinder"/>.
+        /// </summary>
+        DECLARATIVE
     }
 }
