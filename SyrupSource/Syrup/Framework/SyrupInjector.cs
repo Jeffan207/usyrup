@@ -42,6 +42,7 @@ namespace Syrup.Framework {
 
         public SyrupInjector(SyrupInjectorOptions syrupInjectorOptions, params ISyrupModule[] modules) {
             verboseLogging = syrupInjectorOptions.VerboseLogging;
+
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
             paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
             fulfilledDependencies = new Dictionary<NamedDependency, object>();
