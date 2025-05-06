@@ -675,11 +675,11 @@ namespace Syrup.Framework {
             InjectGameObjects(injectableMonoBehaviours);
         }
 
+
         /// <summary>
-        ///     Injects all methods in a specified scene that have methods annotated with the [Inject]
-        ///     attribute.
-        ///     Use this if you plan to dynamically add scenes that will need to be injected outside the games
-        ///     initial setup steps.
+        /// Injects all methods in a specified scene that have methods annotated with the [Inject] attribute.
+        /// Use this if you plan to dynamically add scenes that will need to be injected outside the games
+        /// initial setup steps.
         /// </summary>
         internal void InjectGameObjectsInScene(Scene scene) {
             List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
