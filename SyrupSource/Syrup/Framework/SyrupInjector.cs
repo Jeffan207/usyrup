@@ -16,16 +16,14 @@ namespace Syrup.Framework {
     ///     mean your code).
     /// </summary>
     public class SyrupInjector {
+        private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> _paramOfDependencies = new();
+        private readonly Dictionary<NamedDependency, DependencyInfo> _dependencySources = new();
+        private readonly Dictionary<NamedDependency, object> _fulfilledDependencies = new();
         private Dictionary<NamedDependency, int> _indegreesForType;
-        private readonly Dictionary<NamedDependency, DependencyInfo> _dependencySources;
-        private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> _paramOfDependencies;
         private readonly bool _verboseLogging;
-        private readonly Dictionary<NamedDependency, object> _fulfilledDependencies;
 
         public SyrupInjector(params ISyrupModule[] modules) {
-            _dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
-            _paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
-            _fulfilledDependencies = new Dictionary<NamedDependency, object>();
+            _verboseLogging = false;
 
             AddSyrupModules(modules);
         }
@@ -34,10 +32,6 @@ namespace Syrup.Framework {
             SyrupInjectorOptions syrupInjectorOptions, params ISyrupModule[] modules
         ) {
             _verboseLogging = syrupInjectorOptions.VerboseLogging;
-
-            _dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
-            _paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
-            _fulfilledDependencies = new Dictionary<NamedDependency, object>();
 
             AddSyrupModules(modules);
         }
