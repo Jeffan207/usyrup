@@ -377,10 +377,11 @@ namespace Syrup.Framework {
         /// be provided by the module, so we need to validate if they should fail graph validation or not
         /// </summary>
         private bool IsMeaningfulDependency(NamedDependency namedDependency) {
-            if (dependencySources[namedDependency].DependencySource == DependencySource.PROVIDER) {
+            var dependencySource = dependencySources[namedDependency].DependencySource;
+            if (dependencySource == DependencySource.PROVIDER) {
                 //Providers are always meaningful in the context of a module
                 return true;
-            } else { //must be constructor injection or other
+            } else if (dependencySource == DependencySource.CONSTRUCTOR) {
                 if (!paramOfDependencies.ContainsKey(namedDependency)) {
                     //Nothing depends on this dependency, so its not meaningful
                     return false;
@@ -395,6 +396,8 @@ namespace Syrup.Framework {
                 }
                 return false;
             }
+
+            return false;
         }
 
         private string ConstructMissingDependencyStringForType(NamedDependency namedDependency) {
