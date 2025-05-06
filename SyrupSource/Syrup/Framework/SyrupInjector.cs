@@ -346,25 +346,6 @@ namespace Syrup.Framework {
         }
 
         /// <summary>
-        ///     This method (and it's sister field method) should be used for
-        ///     injecting fields/methods into injectable objects directly. We
-        ///     want the full types for those injections.
-        /// </summary>
-        private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
-            Named dependencyName = param.GetCustomAttribute<Named>();
-            string name = dependencyName != null ? dependencyName.name : null;
-            Type paramType = GetContainedType(param.ParameterType);
-            return new NamedDependency(name, paramType);
-        }
-
-        private NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) {
-            Named dependencyName = field.GetCustomAttribute<Named>();
-            string name = dependencyName != null ? dependencyName.name : null;
-            Type fieldType = GetContainedType(field.FieldType);
-            return new NamedDependency(name, fieldType);
-        }
-
-        /// <summary>
         /// This method (and it's sister field method) should be used for
         /// injecting fields/methods into injectable objects directly. We
         /// want the full types for those injections.
@@ -379,6 +360,25 @@ namespace Syrup.Framework {
         private NamedDependency GetNamedDependencyForField(FieldInfo field) {
             Named dependencyName = field.GetCustomAttribute<Named>();
             string name = dependencyName?.name;
+            Type fieldType = GetContainedType(field.FieldType);
+            return new NamedDependency(name, fieldType);
+        }
+
+        /// <summary>
+        ///     This method (and it's sister field method) should be used for
+        ///     injecting fields/methods into injectable objects directly. We
+        ///     want the full types for those injections.
+        /// </summary>
+        private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
+            Named dependencyName = param.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
+            Type paramType = GetContainedType(param.ParameterType);
+            return new NamedDependency(name, paramType);
+        }
+
+        private NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) {
+            Named dependencyName = field.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
             Type fieldType = GetContainedType(field.FieldType);
             return new NamedDependency(name, fieldType);
         }
