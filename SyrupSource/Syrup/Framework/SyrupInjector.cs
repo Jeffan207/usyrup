@@ -509,6 +509,45 @@ namespace Syrup.Framework {
             return dependency;
         }
 
+        private object[] GetMethodParameters(MethodInfo method) {
+            int paramIndex = 0;
+            object[] parameters = new object[method.GetParameters().Length];
+            foreach (ParameterInfo parameterInfo in method.GetParameters()) {
+                parameters[paramIndex] = BuildDependency(GetNamedDependencyForParamInjection(parameterInfo));
+                paramIndex++;
+            }
+            return parameters;
+        }
+
+        private object[] GetConstructorParameters(ConstructorInfo constructor) {
+            int paramIndex = 0;
+            object[] parameters = new object[constructor.GetParameters().Length];
+            foreach (ParameterInfo parameterInfo in constructor.GetParameters()) {
+                parameters[paramIndex] = BuildDependency(GetNamedDependencyForParamInjection(parameterInfo));
+                paramIndex++;
+            }
+            return parameters;
+        }
+
+        /// <summary>
+        /// A meaningful dependency is one that the module needs to provide because it directly rolls up
+        /// into a Provider annotated method in the module itself. Some constructor injected objects might not
+        /// be provided by the module, so we need to validate if they should fail graph validation or not
+        /// </summary>
+        private bool IsMeaningfulDependency(NamedDependency namedDependency) {
+            if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo source)) {
+                return false;
+            }
+
+            DependencySource dependencySource = source.DependencySource;
+            return dependencySource switch {
+                DependencySource.PROVIDER or DependencySource.DECLARATIVE => true,
+                DependencySource.CONSTRUCTOR => paramOfDependencies.TryGetValue(namedDependency,
+                    out HashSet<NamedDependency> dependency) && dependency.Any(IsMeaningfulDependency),
+                _ => false
+            };
+        }
+
         /// <summary>
         ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
         ///     [Inject]
@@ -540,50 +579,6 @@ namespace Syrup.Framework {
             List<InjectableMonoBehaviour> injectableMonoBehaviours = new();
             SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
             InjectGameObjects(injectableMonoBehaviours);
-        }
-
-        private object[] GetMethodParameters(MethodInfo method) {
-            int paramIndex = 0;
-            object[] parameters = new object[method.GetParameters().Length];
-            foreach (ParameterInfo parameterInfo in method.GetParameters()) {
-                parameters[paramIndex] =
-                    BuildDependency(GetNamedDependencyForParamInjection(parameterInfo));
-                paramIndex++;
-            }
-
-            return parameters;
-        }
-
-        private object[] GetConstructorParameters(ConstructorInfo constructor) {
-            int paramIndex = 0;
-            object[] parameters = new object[constructor.GetParameters().Length];
-            foreach (ParameterInfo parameterInfo in constructor.GetParameters()) {
-                parameters[paramIndex] =
-                    BuildDependency(GetNamedDependencyForParamInjection(parameterInfo));
-                paramIndex++;
-            }
-
-            return parameters;
-        }
-
-        /// <summary>
-        ///     A meaningful dependency is one that the module needs to provide because it directly rolls up
-        ///     into a Provider annotated method in the module itself. Some constructor injected objects might
-        ///     not
-        ///     be provided by the module, so we need to validate if they should fail graph validation or not
-        /// </summary>
-        private bool IsMeaningfulDependency(NamedDependency namedDependency) {
-            if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo source)) {
-                return false;
-            }
-
-            DependencySource dependencySource = source.DependencySource;
-            return dependencySource switch {
-                DependencySource.PROVIDER or DependencySource.DECLARATIVE => true,
-                DependencySource.CONSTRUCTOR => paramOfDependencies.TryGetValue(namedDependency,
-                    out HashSet<NamedDependency> dependency) && dependency.Any(IsMeaningfulDependency),
-                _ => false
-            };
         }
 
         private string ConstructMissingDependencyStringForType(NamedDependency namedDependency) {
