@@ -266,14 +266,14 @@ namespace Syrup.Framework {
         /// Goes through all params for a given dependency and marks that the dependency is a type in the graph
         /// that requires it.
         /// </summary>
-        private void AddDependenciesForParam(
-            NamedDependency namedDependency, List<NamedDependency> namedParameters
-        ) {
+        private void AddDependenciesForParam(NamedDependency namedDependency, List<NamedDependency> namedParameters) {
             foreach (NamedDependency namedParam in namedParameters) {
-                HashSet<NamedDependency> dependentTypes =
-                    paramOfDependencies.TryGetValue(namedParam, out HashSet<NamedDependency> dependency)
-                        ? dependency
-                        : new HashSet<NamedDependency>();
+                HashSet<NamedDependency> dependentTypes;
+                if (paramOfDependencies.ContainsKey(namedParam)) {
+                    dependentTypes = paramOfDependencies[namedParam];
+                } else {
+                    dependentTypes = new HashSet<NamedDependency>();
+                }
                 dependentTypes.Add(namedDependency);
                 paramOfDependencies[namedParam] = dependentTypes;
             }
@@ -344,6 +344,50 @@ namespace Syrup.Framework {
                     $"Incomplete dependency graph. The following dependencies are missing from the completed graph:\n{missingDependencies}");
             }
         }
+
+        /// <summary>
+        ///     This method (and it's sister field method) should be used for
+        ///     injecting fields/methods into injectable objects directly. We
+        ///     want the full types for those injections.
+        /// </summary>
+        private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
+            Named dependencyName = param.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
+            Type paramType = GetContainedType(param.ParameterType);
+            return new NamedDependency(name, paramType);
+        }
+
+        private NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) {
+            Named dependencyName = field.GetCustomAttribute<Named>();
+            string name = dependencyName != null ? dependencyName.name : null;
+            Type fieldType = GetContainedType(field.FieldType);
+            return new NamedDependency(name, fieldType);
+        }
+
+        /// <summary>
+        /// This method (and it's sister field method) should be used for
+        /// injecting fields/methods into injectable objects directly. We
+        /// want the full types for those injections.
+        /// </summary>
+        private NamedDependency GetNamedDependencyForParam(ParameterInfo param) {
+            Named dependencyName = param.GetCustomAttribute<Named>();
+            string name = dependencyName?.name;
+            Type paramType = GetContainedType(param.ParameterType);
+            return new NamedDependency(name, paramType);
+        }
+
+        private NamedDependency GetNamedDependencyForField(FieldInfo field) {
+            Named dependencyName = field.GetCustomAttribute<Named>();
+            string name = dependencyName?.name;
+            Type fieldType = GetContainedType(field.FieldType);
+            return new NamedDependency(name, fieldType);
+        }
+
+        private Type GetContainedType(Type type) =>
+            IsLazyWrapped(type) ? type.GetGenericArguments()[0] : type;
+
+        private static bool IsLazyWrapped(Type type) =>
+            type.IsGenericType && type.GetGenericTypeDefinition() == typeof(LazyObject<>);
 
         /// <summary>
         ///     Injects all methods attached to MBs within all scenes that have methods annotated with the
@@ -648,42 +692,6 @@ namespace Syrup.Framework {
                 InjectObject(injectableMb.mb, injectableMb.fields, injectableMb.methods);
             }
         }
-
-        /// <summary>
-        ///     This method (and it's sister field method) should be used for
-        ///     building the dependency hierarchy. For that process we want to
-        ///     discard any containers so we can build the underlying types.
-        /// </summary>
-        private static NamedDependency GetNamedDependencyForParam(ParameterInfo param) {
-            Named dependencyName = param.GetCustomAttribute<Named>();
-            string name = dependencyName?.name;
-            Type paramType = GetContainedType(param.ParameterType);
-            return new NamedDependency(name, paramType);
-        }
-
-        private static NamedDependency GetNamedDependencyForField(FieldInfo field) {
-            Named dependencyName = field.GetCustomAttribute<Named>();
-            string name = dependencyName?.name;
-            Type fieldType = GetContainedType(field.FieldType);
-            return new NamedDependency(name, fieldType);
-        }
-
-        private static Type GetContainedType(Type type) =>
-            IsLazyWrapped(type) ? type.GetGenericArguments()[0] : type;
-
-        private static bool IsLazyWrapped(Type type) =>
-            type.IsGenericType && type.GetGenericTypeDefinition() == typeof(LazyObject<>);
-
-        /// <summary>
-        ///     This method (and it's sister field method) should be used for
-        ///     injecting fields/methods into injectable objects directly. We
-        ///     want the full types for those injections.
-        /// </summary>
-        private static NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) =>
-            new(param.GetCustomAttribute<Named>()?.name, param.ParameterType);
-
-        private static NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) =>
-            new(field.GetCustomAttribute<Named>()?.name, field.FieldType);
 
         private static ConstructorInfo SelectConstructorForType(Type type) {
             if (type == null || type.IsAbstract || type.IsInterface || IsStatic(type)) {
