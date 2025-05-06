@@ -17,18 +17,18 @@ namespace Syrup.Framework {
     /// </summary>
     public class SyrupInjector {
         //Used in Kahn's algorithm for graph validation
-        private Dictionary<NamedDependency, int> indegreesForType;
+        private readonly Dictionary<NamedDependency, int> indegreesForType;
 
         //Information regarding where the source of a dependency of a particular type
-        private Dictionary<NamedDependency, DependencyInfo> dependencySources = new();
+        private readonly Dictionary<NamedDependency, DependencyInfo> dependencySources = new();
 
         //Given a param, map to all types that need it
-        private Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies = new();
+        private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies = new();
 
         private bool verboseLogging = false;
 
         //Dependencies that have been fully constructed
-        private Dictionary<NamedDependency, object> fulfilledDependencies = new();
+        private readonly Dictionary<NamedDependency, object> fulfilledDependencies = new();
 
         public SyrupInjector(params ISyrupModule[] modules) {
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
