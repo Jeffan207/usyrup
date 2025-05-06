@@ -708,14 +708,14 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestDeclarative_InjectsDependenciesIntoBoundType() {
-        // DeclarativeInjectedDependenciesModule binds IDeclarativeService to DeclarativeServiceImpl1
-        // and DeclarativeDependency to itself. DeclarativeServiceImpl1 has a ctor taking DeclarativeDependency.
-        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectedDependenciesModule());
+        // Use the Hybrid Module: Configure binds the dependency, 
+        // [Provides] forces the specific constructor for the service.
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectSpecificCtorHybridModule()); 
         var service = injector.GetInstance<IDeclarativeService>();
 
         Assert.IsNotNull(service);
-        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service);
-        StringAssert.Contains("with Dependency", service.Greet());
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service); 
+        StringAssert.Contains("with Dependency", service.Greet()); 
     }
 
     [Test]
