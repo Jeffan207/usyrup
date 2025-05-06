@@ -630,7 +630,6 @@ namespace Syrup.Framework {
                 if (verboseLogging) {
                     Debug.Log($"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
                 }
-
                 injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForFieldInjection(injectableField)));
             }
 
