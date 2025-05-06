@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using NUnit.Framework;
 using Syrup.Framework;
+using Syrup.Framework.Declarative;
 using Syrup.Framework.Containers;
 using Syrup.Framework.Exceptions;
 using Tests.Framework.TestData;
@@ -126,7 +128,7 @@ public class SyrupInjectorTest {
 
         Assert.AreNotEqual(omelette1.id, omelette2.id);
         Assert.AreNotEqual(omelette1.egg.id, omelette2.egg.id);
-    } 
+    }
 
     [Test]
     public void TestSyrupInjector_WhereAProvidedParameterIsPassedToAnInjectedConstructor() {
@@ -216,7 +218,7 @@ public class SyrupInjectorTest {
 
         //We're able to build some pancakes
         Pancake pancake = syrupInjector.GetInstance<Pancake>();
-        
+
         //And some flour separately
         Flour flour = syrupInjector.GetInstance<Flour>();
 
@@ -231,7 +233,7 @@ public class SyrupInjectorTest {
     [Test]
     public void TestSyrupInjector_WithoutAnyModules() {
         SyrupInjector syrupInjector = new SyrupInjector();
-        
+
         Egg egg = syrupInjector.GetInstance<Egg>();
         Assert.AreEqual(Egg.SCRAMBLED_EGGS, egg.style);
 
@@ -291,8 +293,8 @@ public class SyrupInjectorTest {
     [Test]
     public void TestSyrupInjector_FulfillsInheritedMethodInjectionsInTheRightOrder() {
         SyrupInjector syrupInjector = new SyrupInjector(
-            new TwoDependentProvidersModule(), 
-            new SingleProviderModule(), 
+            new TwoDependentProvidersModule(),
+            new SingleProviderModule(),
             new ProvidedEggModule());
 
         AmericanBuffet americanBuffet = syrupInjector.GetInstance<AmericanBuffet>();
@@ -530,7 +532,7 @@ public class SyrupInjectorTest {
         // This should check the memory addresses right, if this
         // fails then consider trying a different method
         Assert.AreEqual(lazyEggEater1.egg, lazyEggEater2.egg);
-      
+
         Egg egg1 = lazyEggEater1.egg.Get();
         Egg egg2 = lazyEggEater2.egg.Get();
 
@@ -579,4 +581,219 @@ public class SyrupInjectorTest {
         Assert.NotNull(lazySyrupEater.syrup.Get());
     }
 
+    #region Declarative Binding Tests
+
+    [Test]
+    public void TestDeclarative_BindToImplementation_Transient() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeBasicModule());
+        var service1 = injector.GetInstance<IDeclarativeService>();
+        var service2 = injector.GetInstance<IDeclarativeService>();
+
+        Assert.IsNotNull(service1);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service1);
+        Assert.IsNotNull(service2);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service2);
+        Assert.AreNotSame(service1, service2);
+        Assert.AreNotEqual(service1.Id, service2.Id);
+    }
+
+    [Test]
+    public void TestDeclarative_BindServiceImplementation_Shorthand_Transient() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeBasicModule());
+        // DeclarativeBasicModule binds DeclarativeConcrete, DeclarativeConcrete
+        var concrete1 = injector.GetInstance<DeclarativeConcrete>();
+        var concrete2 = injector.GetInstance<DeclarativeConcrete>();
+
+        Assert.IsNotNull(concrete1);
+        Assert.IsNotNull(concrete2);
+        Assert.AreNotSame(concrete1, concrete2);
+        Assert.AreEqual("Injected Ctor", concrete1.Message); // Verifies [Inject] ctor was used
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(concrete1.Service);
+    }
+
+    [Test]
+    public void TestDeclarative_AsSingleton() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeSingletonModule());
+        var service1 = injector.GetInstance<IDeclarativeService>();
+        var service2 = injector.GetInstance<IDeclarativeService>();
+
+        Assert.IsNotNull(service1);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service1);
+        Assert.AreSame(service1, service2);
+        Assert.AreEqual(service1.Id, service2.Id);
+    }
+
+    [Test]
+    public void TestDeclarative_ToInstance() {
+        var module = new DeclarativeInstanceModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        var service1 = injector.GetInstance<IDeclarativeService>();
+        var service2 = injector.GetInstance<IDeclarativeService>();
+
+        Assert.IsNotNull(service1);
+        Assert.AreSame(module.MyInstance, service1);
+        Assert.AreSame(service1, service2); // ToInstance implies singleton for that binding
+    }
+
+    [Test]
+    public void TestDeclarative_Named_ToImplementation() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeNamedModule());
+        var service1 = injector.GetInstance<IDeclarativeService>("Service1");
+        var service2 = injector.GetInstance<IDeclarativeService>("Service2");
+        var service1Again = injector.GetInstance<IDeclarativeService>("Service1");
+
+        Assert.IsNotNull(service1);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service1);
+        Assert.IsNotNull(service2);
+        Assert.IsInstanceOf<DeclarativeServiceImpl2>(service2);
+        Assert.AreNotSame(service1, service2);
+        Assert.AreNotSame(service1, service1Again);
+
+        Assert.Throws<MissingDependencyException>(() =>
+            injector.GetInstance<IDeclarativeService>());
+    }
+
+    [Test]
+    public void TestDeclarative_Named_AsSingleton() {
+        var module = new DeclarativeNamedSingletonModule(); // Needs to be created
+        var injector = new SyrupInjector(OPTIONS, module);
+        var s1A = injector.GetInstance<IDeclarativeService>("SingletonService1");
+        var s1B = injector.GetInstance<IDeclarativeService>("SingletonService1");
+        var s2 = injector.GetInstance<IDeclarativeService>("TransientService2");
+
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(s1A);
+        Assert.AreSame(s1A, s1B);
+        Assert.IsInstanceOf<DeclarativeServiceImpl2>(s2);
+    }
+
+    [Test]
+    public void TestDeclarative_Named_ToInstance() {
+        var module = new DeclarativeNamedInstanceModule(); // Needs to be created
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        var s1 = injector.GetInstance<IDeclarativeService>("Instance1");
+        var s2 = injector.GetInstance<IDeclarativeService>("Instance2");
+
+        Assert.AreSame(module.Instance1, s1);
+        Assert.AreSame(module.Instance2, s2);
+        Assert.AreNotSame(s1, s2);
+    }
+
+    [Test]
+    public void TestDeclarative_ProviderTakesPrecedence() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeProviderPrecedenceModule());
+        var service = injector.GetInstance<IDeclarativeService>();
+
+        Assert.IsNotNull(service);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1WithCustomId>(service);
+        Assert.AreEqual(DeclarativeProviderPrecedenceModule.ProvidedId, service.Id);
+    }
+
+    [Test]
+    public void TestDeclarative_BindingTakesPrecedenceOverConstructor() {
+        // DeclarativeConcrete has an [Inject] constructor taking IDeclarativeService
+        // DeclarativeConstructorPrecedenceModule will bind IDeclarativeService to ServiceImpl2
+        // and then bind DeclarativeConcrete to itself. The self-binding should pick its [Inject] ctor,
+        // which should receive ServiceImpl2.
+        var module = new DeclarativeConstructorPrecedenceModule(); // Needs to be created
+        var injector = new SyrupInjector(OPTIONS, module);
+        var concrete = injector.GetInstance<DeclarativeConcrete>();
+
+        Assert.IsNotNull(concrete);
+        Assert.AreEqual("Injected Ctor", concrete.Message);
+        Assert.IsNotNull(concrete.Service);
+        Assert.IsInstanceOf<DeclarativeServiceImpl2>(concrete
+            .Service); // Check that ServiceImpl2 was used
+    }
+
+    [Test]
+    public void TestDeclarative_InjectsDependenciesIntoBoundType() {
+        // DeclarativeInjectedDependenciesModule binds IDeclarativeService to DeclarativeServiceImpl1
+        // and DeclarativeDependency to itself. DeclarativeServiceImpl1 has a ctor taking DeclarativeDependency.
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeInjectedDependenciesModule());
+        var service = injector.GetInstance<IDeclarativeService>();
+
+        Assert.IsNotNull(service);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(service);
+        StringAssert.Contains("with Dependency", service.Greet());
+    }
+
+    [Test]
+    public void TestDeclarative_Error_IncompleteBinding_ThrowsException() {
+        Assert.Throws<InvalidOperationException>(() => {
+            new SyrupInjector(OPTIONS, new DeclarativeIncompleteBindingModule());
+        });
+    }
+
+    [Test]
+    public void TestDeclarative_Error_DuplicateBinding_ThrowsException() {
+        Assert.Throws<DuplicateProviderException>(() => {
+            new SyrupInjector(OPTIONS,
+                new DeclarativeDuplicateBindingModule()); // Needs to be created
+        });
+    }
+
+    [Test]
+    public void TestDeclarative_Error_AmbiguousConstructor_ThrowsException() {
+        Assert.Throws<InvalidOperationException>(() => {
+            // This module binds AmbiguousConstructorClass which has multiple non-annotated, non-parameterless constructors
+            new SyrupInjector(OPTIONS, new DeclarativeAmbiguousConstructorModule());
+        });
+    }
+
+    [Test]
+    public void TestDeclarative_SelfBindConcrete_AsSingleton() {
+        // DeclarativeSelfBindSingletonModule binds DeclarativeDependency to itself as singleton
+        var module = new DeclarativeSelfBindSingletonModule(); // Needs to be created
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        var dep1 = injector.GetInstance<DeclarativeDependency>();
+        var dep2 = injector.GetInstance<DeclarativeDependency>();
+
+        Assert.IsNotNull(dep1);
+        Assert.AreSame(dep1, dep2);
+    }
+
+    [Test]
+    public void TestDeclarative_LazyInjectionOfBoundTypes() {
+        // DeclarativeLazyModule binds IDeclarativeService to ServiceImpl1 as singleton
+        var module = new DeclarativeLazyModule(); // Needs to be created
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        var lazyService1 = injector.GetInstance<LazyObject<IDeclarativeService>>();
+        var lazyService2 = injector.GetInstance<LazyObject<IDeclarativeService>>();
+
+        Assert.IsNotNull(lazyService1.Get());
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(lazyService1.Get());
+        Assert.AreSame(lazyService1.Get(), lazyService2.Get()); // Because original binding was singleton
+
+        var directService = injector.GetInstance<IDeclarativeService>();
+        Assert.AreSame(lazyService1.Get(), directService);
+    }
+
+    [Test]
+    public void TestDeclarative_BindsConcreteWithExplicitConstructor() {
+        // DeclarativeExplicitConstructorModule binds ExplicitConstructorClass to itself.
+        // ExplicitConstructorClass has one public constructor taking DeclarativeDependency.
+        // DeclarativeDependency should be auto-registered or bound.
+        var module = new DeclarativeExplicitConstructorModule(); // Needs to be created
+        var injector = new SyrupInjector(OPTIONS, module);
+        var instance = injector.GetInstance<ExplicitConstructorClass>();
+        Assert.IsNotNull(instance);
+        StringAssert.Contains("Constructed with Dependency", instance.Message);
+    }
+
+    [Test]
+    public void TestDeclarative_Error_NoPublicConstructor_ThrowsException() {
+        // DeclarativeNoPublicConstructorModule binds NoPublicConstructorClass to itself.
+        // NoPublicConstructorClass has no public constructors.
+        var module = new DeclarativeNoPublicConstructorModule(); // Needs to be created
+        Assert.Throws<MissingMemberException>(() => {
+            // Expect MissingMemberException when BuildDependency tries Activator.CreateInstance
+            var injector = new SyrupInjector(OPTIONS, module);
+            injector.GetInstance<NoPublicConstructorClass>();
+        });
+    }
+
+    #endregion
 }
