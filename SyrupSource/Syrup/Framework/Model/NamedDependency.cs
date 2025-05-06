@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Syrup.Framework.Model {
     internal class NamedDependency {
+
         public readonly string name;
         public readonly Type type;
 
@@ -11,14 +12,21 @@ namespace Syrup.Framework.Model {
             this.type = type;
         }
 
-        public override bool Equals(object obj) =>
-            obj is NamedDependency dependency &&
-            name == dependency.name &&
-            EqualityComparer<Type>.Default.Equals(type, dependency.type);
+        public override bool Equals(object obj) {
+            return obj is NamedDependency type &&
+                   name == type.name &&
+                   EqualityComparer<Type>.Default.Equals(this.type, type.type);
+        }
 
-        public override int GetHashCode() => HashCode.Combine(name, type);
+        public override int GetHashCode() {
+            return HashCode.Combine(name, type);
+        }
 
-        public override string ToString() =>
-            name != null ? $"Named(\"{name}\")[{type}]" : $"[{type}]";
+        public override string ToString() {
+            if (name != null) {
+                return string.Format("Named(\"{0}\")[{1}]", name, type.ToString());
+            }
+            return string.Format("[{0}]",type.ToString());
+        }
     }
 }
