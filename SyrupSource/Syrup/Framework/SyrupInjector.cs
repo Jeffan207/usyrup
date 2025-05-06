@@ -357,7 +357,7 @@ namespace Syrup.Framework {
 
         private NamedDependency GetNamedDependencyForField(FieldInfo field) {
             Named dependencyName = field.GetCustomAttribute<Named>();
-            string name = dependencyName?.name;
+            string name = dependencyName != null ? dependencyName.name : null;
             Type fieldType = GetContainedType(field.FieldType);
             return new NamedDependency(name, fieldType);
         }
@@ -401,10 +401,10 @@ namespace Syrup.Framework {
         /// <returns>The requested dependency or its LazyObject wrapped container</returns>
         private object BuildDependency(NamedDependency namedDependency) {
             NamedDependency dependencyToBuild = namedDependency;
-            bool isLazy = IsLazyWrapped(namedDependency.Type);
+            bool isLazy = IsLazyWrapped(namedDependency.type);
             if (isLazy) {
-                Type containedType = GetContainedType(namedDependency.Type);
-                dependencyToBuild = new NamedDependency(namedDependency.Name, containedType);
+                Type containedType = GetContainedType(namedDependency.type);
+                dependencyToBuild = new NamedDependency(namedDependency.name, containedType);
                 if (verboseLogging) {
                     Debug.Log($"Requested lazy instance of type: {dependencyToBuild}");
                 }
@@ -447,7 +447,7 @@ namespace Syrup.Framework {
                 // Since we cannot just create arbitrary generic types Lazy<T> instances at runtime
                 // we need to use reflection to create them instead.
                 object lazyDependency =
-                    Activator.CreateInstance(namedDependency.Type, namedDependency.Name, this);
+                    Activator.CreateInstance(namedDependency.type, namedDependency.name, this);
 
                 if (dependencyInfo.IsSingleton) {
                     fulfilledDependencies.Add(namedDependency, lazyDependency);
