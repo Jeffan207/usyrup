@@ -1,4 +1,5 @@
-﻿using Syrup.Framework.Declarative;
+﻿using System;
+using Syrup.Framework.Declarative;
 
 namespace Syrup.Framework {
     public interface ISyrupModule {
