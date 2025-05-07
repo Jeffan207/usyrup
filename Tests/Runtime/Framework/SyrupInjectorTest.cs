@@ -7,6 +7,8 @@ using Syrup.Framework.Containers;
 using Syrup.Framework.Exceptions;
 using Tests.Framework.TestData;
 using Tests.Framework.TestModules;
+using Tests.Framework.TestData.Declarative;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 public class SyrupInjectorTest {
@@ -790,6 +792,102 @@ public class SyrupInjectorTest {
             var injector = new SyrupInjector(OPTIONS, module);
             injector.GetInstance<NoPublicConstructorClass>();
         });
+    }
+
+    [Test]
+    public void TestDeclarative_SelfBindConcrete_ResolvesInstance() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeSelfBindModule());
+        var instance = injector.GetInstance<SelfBindableConcrete>();
+        Assert.IsNotNull(instance);
+        Assert.IsInstanceOf<SelfBindableConcrete>(instance);
+    }
+
+    [Test]
+    public void TestDeclarative_SelfBindConcrete_ThenToImplementation_ResolvesOverriddenInstance() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeSelfBindOverrideToImplementationModule());
+        var instance = injector.GetInstance<ISelfBindable>();
+        Assert.IsNotNull(instance);
+        Assert.IsInstanceOf<AnotherSelfBindableConcrete>(instance);
+    }
+
+    [Test]
+    public void TestDeclarative_SelfBindConcrete_ThenToInstance_ResolvesSpecificInstance() {
+        var injector = new SyrupInjector(OPTIONS, new DeclarativeSelfBindOverrideToInstanceModule());
+        var instance = injector.GetInstance<ISelfBindable>();
+        Assert.IsNotNull(instance);
+        Assert.IsInstanceOf<AnotherSelfBindableConcrete>(instance);
+    }
+
+    [Test]
+    public void TestDeclarative_BindInterfaceOnly_ThrowsIncompleteBindingException() {
+        Assert.Throws<InvalidOperationException>(() =>
+            new SyrupInjector(new DeclarativeBindInterfaceOnlyModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_BindToMonoBehaviour_ThrowsInvalidOperationException() {
+        Assert.Throws<InvalidOperationException>(() =>
+            new SyrupInjector(new DeclarativeBindToMonoBehaviourModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_SelfBindMonoBehaviour_ThrowsInvalidOperationException() {
+        // This exception occurs because MonoBehaviours cannot be instantiated by the injector,
+        // which is checked before constructor selection logic, even for self-binds.
+        Assert.Throws<InvalidOperationException>(() =>
+            new SyrupInjector(new DeclarativeSelfBindMonoBehaviourModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_BindLazyObjectAsService_ThrowsInvalidOperationException() {
+        Assert.Throws<InvalidOperationException>(() =>
+            new SyrupInjector(new DeclarativeBindLazyObjectAsServiceModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_Constructor_MultiNoInject_OptionFalse_Throws() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = false };
+        Assert.Throws<NoSuitableConstructorFoundException>(() => new SyrupInjector(options,
+            new DeclarativeConstructorSelectionMultiNoInjectOptionFalseModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_Constructor_SinglePublic_OptionTrue_Resolves() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = true };
+        var injector = new SyrupInjector(options,
+            new DeclarativeConstructorSelectionSinglePublicOptionTrueModule());
+        var instance = injector.GetInstance<SinglePublicConstructor>();
+        Assert.IsNotNull(instance);
+    }
+
+    [Test]
+    public void TestDeclarative_Constructor_MultiWithParameterless_OptionTrue_Resolves() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = true };
+        var injector = new SyrupInjector(options,
+            new DeclarativeConstructorSelectionMultiWithParameterlessOptionTrueModule());
+        var instance = injector.GetInstance<MultiConstructorWithParameterless>();
+        Assert.IsNotNull(instance);
+    }
+
+    [Test]
+    public void TestDeclarative_Constructor_MultiNoParameterless_OptionTrue_Throws() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = true };
+        Assert.Throws<NoSuitableConstructorFoundException>(() => new SyrupInjector(options,
+            new DeclarativeConstructorSelectionMultiNoParameterlessOptionTrueModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_ValueType_NoSuitableConstructor_OptionFalse_Throws() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = false };
+        Assert.Throws<NoSuitableConstructorFoundException>(() =>
+            new SyrupInjector(options, new DeclarativeValueTypeNoSuitableConstructorModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_ValueType_NoSuitableConstructor_OptionTrue_Throws() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = true };
+        Assert.Throws<NoSuitableConstructorFoundException>(() =>
+            new SyrupInjector(options, new DeclarativeValueTypeImplicitParameterlessConstructorOptionTrueModule()));
     }
 
     #endregion
