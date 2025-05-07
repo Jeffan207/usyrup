@@ -5,7 +5,7 @@ using Tests.Framework.TestData.Declarative;
 namespace Tests.Framework.TestModules {
     public class DeclarativeBindInterfaceOnlyModule : ISyrupModule {
         public void Configure(IBinder binder) {
-            binder.Bind<ISelfBindable>(); // No To() or ToInstance()
+            binder.Bind<ISelfBindable>();
         }
     }
 }

@@ -1,5 +1,3 @@
 namespace Tests.Framework.TestData.Declarative {
-    public struct MyValueStruct : IMyValueService {
-        // No explicit constructor
-    }
-} 
+    public struct MyValueStruct : IMyValueService { }
+}

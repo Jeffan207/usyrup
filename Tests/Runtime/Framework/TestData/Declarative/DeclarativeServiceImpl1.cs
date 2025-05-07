@@ -5,10 +5,8 @@ namespace Tests.Framework.TestData {
         public string Id { get; } = Guid.NewGuid().ToString();
         private readonly DeclarativeDependency _dependency;
 
-        // Constructor that might be auto-selected by DI if no [Inject] or other rules apply
         public DeclarativeServiceImpl1() { }
 
-        // Constructor for testing dependency injection into declaratively bound types
         public DeclarativeServiceImpl1(DeclarativeDependency dependency) {
             _dependency = dependency;
         }

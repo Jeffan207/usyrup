@@ -6,7 +6,7 @@ namespace Tests.Framework.TestModules {
     public class DeclarativeBasicModule : ISyrupModule {
         public void Configure(IBinder binder) {
             binder.Bind<IDeclarativeService>().To<DeclarativeServiceImpl1>();
-            binder.Bind<DeclarativeConcrete, DeclarativeConcrete>(); // Shorthand for self-binding
+            binder.Bind<DeclarativeConcrete, DeclarativeConcrete>();
         }
     }
 }
