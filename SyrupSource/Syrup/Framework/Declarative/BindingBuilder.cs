@@ -27,13 +27,13 @@ namespace Syrup.Framework.Declarative {
         }
 
         public void ToInstance(TService instance) {
-            if (_binding.ImplementationType != null) {
-                throw new InvalidOperationException(
-                    "Cannot use ToInstance() after specifying an implementation type. Use Bind<TService>() instead of Bind<TService, TImplementation>().");
-            }
+            // If ToInstance is called, it takes precedence.
+            // Clear any potentially pre-filled ImplementationType from a default self-binding.
+            _binding.ImplementationType = null; 
 
             _binding.Instance = instance;
-            _binding.IsSingleton = true;
+            // ToInstance implies a singleton for that specific instance.
+            _binding.IsSingleton = true; 
         }
     }
 }

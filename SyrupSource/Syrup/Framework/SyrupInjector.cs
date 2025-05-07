@@ -173,7 +173,7 @@ namespace Syrup.Framework {
                         requiredParamsCount = uniqueParameters.Count;
                     } else {
                         throw new InvalidOperationException(
-                            $"Declarative binding for '{namedDependency}' is incomplete. Must call To<TImplementation>() or ToInstance().");
+                            $"Declarative binding for '{namedDependency}' is incomplete. If '{namedDependency.type.FullName}' is an interface or abstract class, you must call .To<TImplementation>() or .ToInstance(). If it is a concrete class, this indicates an issue with the default self-binding.");
                     }
 
                     indegreesForType[namedDependency] = requiredParamsCount;
