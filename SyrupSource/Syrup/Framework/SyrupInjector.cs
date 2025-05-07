@@ -109,17 +109,17 @@ namespace Syrup.Framework {
                             $"Syrup automatically handles LazyObject<T> for dependencies. Bind the underlying type '{GetContainedType(binding.BoundService).FullName}' instead.");
                      }
 
+                     if (binding.Instance == null && typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
+                         throw new InvalidOperationException(
+                             "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
+                     }
+
                      NamedDependency namedDeclBinding = new NamedDependency(binding.Name, binding.BoundService);
 
                      if (dependencySources.ContainsKey(namedDeclBinding) &&
                          dependencySources[namedDeclBinding].DependencySource is DependencySource.DECLARATIVE or DependencySource.PROVIDER) {
                          throw new DuplicateDeclarativeException(
                              $"A binding for the specified dependency '{namedDeclBinding}' has already been registered!");
-                     }
-
-                     if (binding.Instance == null && typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
-                         throw new InvalidOperationException(
-                             "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
                      }
 
                      DependencyInfo declDependencyInfo = new() {
