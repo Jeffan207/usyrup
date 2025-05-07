@@ -436,8 +436,6 @@ namespace Syrup.Framework {
                     if (constructorToUse != null) {
                         object[] parameters = GetConstructorParameters(constructorToUse);
                         dependency = constructorToUse.Invoke(parameters);
-                    } else if (dependencyInfo.ImplementationType.IsValueType) {
-                        dependency = Activator.CreateInstance(dependencyInfo.ImplementationType);
                     } else {
                         throw new MissingMemberException(
                             $"Cannot create instance of '{dependencyInfo.ImplementationType.FullName}' for declarative binding '{dependencyToBuild}'. No suitable constructor found or specified during registration.");
