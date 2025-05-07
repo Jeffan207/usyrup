@@ -699,8 +699,7 @@ namespace Syrup.Framework {
                 return constructors[0];
             }
 
-            ConstructorInfo parameterlessConstructor =
-                constructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+            ConstructorInfo parameterlessConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0);
             if (parameterlessConstructor != null) {
                 return parameterlessConstructor;
             }
