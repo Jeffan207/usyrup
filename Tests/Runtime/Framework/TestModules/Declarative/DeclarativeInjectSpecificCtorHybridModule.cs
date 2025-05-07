@@ -5,14 +5,12 @@ using Tests.Framework.TestData;
 
 namespace Tests.Framework.TestModules {
     public class DeclarativeInjectSpecificCtorHybridModule : ISyrupModule {
-
         [Provides]
-        public IDeclarativeService ProvideServiceWithDependency(DeclarativeDependency dep) {
-            return new DeclarativeServiceImpl1(dep);
-        }
+        public IDeclarativeService ProvideServiceWithDependency(DeclarativeDependency dep) =>
+            new DeclarativeServiceImpl1(dep);
 
         public void Configure(IBinder binder) {
-             binder.Bind<DeclarativeDependency>().To<DeclarativeDependency>();
+            binder.Bind<DeclarativeDependency>().To<DeclarativeDependency>();
         }
     }
 }

@@ -12,4 +12,4 @@ namespace Tests.Framework.TestModules {
             binder.Bind<IDeclarativeService>().Named("Instance2").ToInstance(Instance2);
         }
     }
-} 
+}

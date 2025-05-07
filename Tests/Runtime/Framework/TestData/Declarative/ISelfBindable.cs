@@ -1,3 +1,3 @@
 namespace Tests.Framework.TestData.Declarative {
-    public interface ISelfBindable {}
-} 
+    public interface ISelfBindable { }
+}
