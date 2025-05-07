@@ -56,8 +56,9 @@ namespace Syrup.Framework {
         internal void AddSyrupModules(params ISyrupModule[] modules) {
             indegreesForType = new Dictionary<NamedDependency, int>();
 
-            //Fetch all provider methods declared in all provided modules
+            // Merged loop for processing both providers and declarative bindings per module
             foreach (ISyrupModule module in modules) {
+                // --- Start: Processing [Provides] methods for the current module ---
                 IEnumerable<MethodInfo> providerMethods = module.GetType().GetMethods()
                     .Where(x => x.GetCustomAttributes(typeof(Provides), false).FirstOrDefault() != null);
 
@@ -95,91 +96,86 @@ namespace Syrup.Framework {
                     dependencySources[namedDependency] = dependencyInfo;
                     AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
                 }
-            }
+                // --- End: Processing [Provides] methods for the current module ---
 
-            // Process declarative bindings from Configure()
-            foreach (ISyrupModule module in modules) {
+                // --- Start: Processing declarative bindings for the current module ---
                 Binder binder = new Binder();
                 module.Configure(binder);
 
                 foreach (Binding binding in binder.GetBindings()) {
-                    if (IsLazyWrapped(binding.BoundService)) {
+                     if (IsLazyWrapped(binding.BoundService)) {
                         throw new InvalidOperationException(
                             $"Cannot explicitly bind the LazyObject wrapper type '{binding.BoundService.FullName}' for service '{binding.Name}'. " +
                             $"Syrup automatically handles LazyObject<T> for dependencies. Bind the underlying type '{GetContainedType(binding.BoundService).FullName}' instead.");
-                    }
+                     }
 
-                    NamedDependency namedDependency = new NamedDependency(binding.Name, binding.BoundService);
+                     NamedDependency namedDeclBinding = new NamedDependency(binding.Name, binding.BoundService);
 
-                    if (dependencySources.ContainsKey(namedDependency) &&
-                        dependencySources[namedDependency].DependencySource is DependencySource.DECLARATIVE or DependencySource.PROVIDER) {
-                        throw new DuplicateDeclarativeException(
-                            $"A binding for the specified dependency '{namedDependency}' has already been registered!");
-                    }
+                     if (dependencySources.ContainsKey(namedDeclBinding) &&
+                         dependencySources[namedDeclBinding].DependencySource is DependencySource.DECLARATIVE or DependencySource.PROVIDER) {
+                         throw new DuplicateDeclarativeException(
+                             $"A binding for the specified dependency '{namedDeclBinding}' has already been registered!");
+                     }
 
-                    DependencyInfo dependencyInfo = new() {
-                        DependencySource = DependencySource.DECLARATIVE,
-                        Type = binding.BoundService,
-                        IsSingleton = binding.IsSingleton,
-                        ImplementationType = binding.ImplementationType,
-                        Instance = binding.Instance
-                    };
+                     DependencyInfo declDependencyInfo = new() {
+                         DependencySource = DependencySource.DECLARATIVE,
+                         Type = binding.BoundService,
+                         IsSingleton = binding.IsSingleton,
+                         ImplementationType = binding.ImplementationType,
+                         Instance = binding.Instance
+                     };
 
-                    int requiredParamsCount;
-                    HashSet<NamedDependency> uniqueParameters = new HashSet<NamedDependency>();
+                     int requiredParamsCount;
+                     HashSet<NamedDependency> declUniqueParameters = new HashSet<NamedDependency>();
 
-                    if (binding.Instance != null) {
-                        if (IsLazyWrapped(binding.Instance.GetType())) {
-                            throw new InvalidOperationException(
-                                $"Cannot use ToInstance() with an explicit LazyObject instance for service '{namedDependency}' (bound type: '{binding.BoundService.FullName}'). " +
-                                $"Syrup automatically handles LazyObject<T> for dependencies. Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' instead.");
-                        }
-                        requiredParamsCount = 0;
-                    } else if (typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
-                        throw new InvalidOperationException(
-                            "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
-                    } else if (binding.ImplementationType != null) {
-                        if (IsLazyWrapped(binding.ImplementationType)) {
-                            throw new InvalidOperationException(
-                                $"Cannot use To<{binding.ImplementationType.FullName}>() with an explicit LazyObject type for service '{namedDependency}' (bound type: '{binding.BoundService.FullName}'). " +
-                                $"Syrup automatically handles LazyObject<T> for dependencies. Use To<{GetContainedType(binding.ImplementationType).FullName}>() for the underlying type instead.");
-                        }
+                     if (binding.Instance != null) {
+                         if (IsLazyWrapped(binding.Instance.GetType())) {
+                             throw new InvalidOperationException(
+                                 $"Cannot use ToInstance() with an explicit LazyObject instance for service '{namedDeclBinding}' (bound type: '{binding.BoundService.FullName}'). " +
+                                 $"Syrup automatically handles LazyObject<T> for dependencies. Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' instead.");
+                         }
+                         requiredParamsCount = 0;
+                     } else if (typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
+                         throw new InvalidOperationException(
+                             "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
+                     } else if (binding.ImplementationType != null) {
+                         if (IsLazyWrapped(binding.ImplementationType)) {
+                             throw new InvalidOperationException(
+                                 $"Cannot use To<{binding.ImplementationType.FullName}>() with an explicit LazyObject type for service '{namedDeclBinding}' (bound type: '{binding.BoundService.FullName}'). " +
+                                 $"Syrup automatically handles LazyObject<T> for dependencies. Use To<{GetContainedType(binding.ImplementationType).FullName}>() for the underlying type instead.");
+                         }
 
-                        ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
-                        dependencyInfo.Constructor = implConstructor;
+                         ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
+                         declDependencyInfo.Constructor = implConstructor;
 
-                        foreach (ParameterInfo param in implConstructor.GetParameters()) {
-                            uniqueParameters.Add(GetNamedDependencyForParam(param));
-                        }
+                         foreach (ParameterInfo param in implConstructor.GetParameters()) {
+                             declUniqueParameters.Add(GetNamedDependencyForParam(param));
+                         }
 
-                        FieldInfo[] injectableFields =
-                            SyrupUtils.GetInjectableFieldsFromType(binding.ImplementationType);
-                        foreach (FieldInfo injectableField in injectableFields) {
-                            uniqueParameters.Add(GetNamedDependencyForField(injectableField));
-                        }
+                         FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(binding.ImplementationType);
+                         foreach (FieldInfo injectableField in injectableFields) {
+                             declUniqueParameters.Add(GetNamedDependencyForField(injectableField));
+                         }
+                         declDependencyInfo.InjectableFields = injectableFields;
 
-                        dependencyInfo.InjectableFields = injectableFields;
+                         MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(binding.ImplementationType);
+                         foreach (MethodInfo injectableMethod in injectableMethods) {
+                             foreach (ParameterInfo param in injectableMethod.GetParameters()) {
+                                 declUniqueParameters.Add(GetNamedDependencyForParam(param));
+                             }
+                         }
+                         declDependencyInfo.InjectableMethods = injectableMethods;
+                         requiredParamsCount = declUniqueParameters.Count;
+                     } else {
+                         throw new InvalidOperationException(
+                             $"Declarative binding for '{namedDeclBinding}' is incomplete. If '{namedDeclBinding.type.FullName}' is an interface or abstract class, you must call .To<TImplementation>() or .ToInstance(). If it is a concrete class, this indicates an issue with the default self-binding.");
+                     }
 
-                        MethodInfo[] injectableMethods =
-                            SyrupUtils.GetInjectableMethodsFromType(binding.ImplementationType);
-                        foreach (MethodInfo injectableMethod in injectableMethods) {
-                            foreach (ParameterInfo param in injectableMethod.GetParameters()) {
-                                uniqueParameters.Add(GetNamedDependencyForParam(param));
-                            }
-                        }
-
-                        dependencyInfo.InjectableMethods = injectableMethods;
-
-                        requiredParamsCount = uniqueParameters.Count;
-                    } else {
-                        throw new InvalidOperationException(
-                            $"Declarative binding for '{namedDependency}' is incomplete. If '{namedDependency.type.FullName}' is an interface or abstract class, you must call .To<TImplementation>() or .ToInstance(). If it is a concrete class, this indicates an issue with the default self-binding.");
-                    }
-
-                    indegreesForType[namedDependency] = requiredParamsCount;
-                    dependencySources[namedDependency] = dependencyInfo;
-                    AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
+                     indegreesForType[namedDeclBinding] = requiredParamsCount;
+                     dependencySources[namedDeclBinding] = declDependencyInfo;
+                     AddDependenciesForParam(namedDeclBinding, declUniqueParameters.ToList());
                 }
+                // --- End: Processing declarative bindings for the current module ---
             }
 
             //Fetch all injectable constructors
