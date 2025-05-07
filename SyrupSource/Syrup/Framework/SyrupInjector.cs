@@ -260,55 +260,44 @@ namespace Syrup.Framework {
         /// </summary>
         private void ValidateDependencyGraph() {
             Queue<NamedDependency> queue = new Queue<NamedDependency>();
-            Dictionary<NamedDependency, int> currentIndegrees = new Dictionary<NamedDependency, int>(indegreesForType);
-
-            foreach (NamedDependency key in currentIndegrees.Keys.Where(key => currentIndegrees[key] == 0)) {
-                queue.Enqueue(key);
+            foreach (NamedDependency key in indegreesForType.Keys) {
+                if (indegreesForType[key] == 0) {
+                    queue.Enqueue(key);
+                }
             }
 
-            int visitedCount = 0;
             while (queue.Count > 0) {
                 NamedDependency namedDependency = queue.Dequeue();
-                visitedCount++;
-
-                if (!paramOfDependencies.TryGetValue(namedDependency, out HashSet<NamedDependency> dependentTypes)) {
+                if (!paramOfDependencies.TryGetValue(namedDependency, out var dependentTypes)) {
                     continue;
                 }
 
                 foreach (NamedDependency dependentType in dependentTypes) {
-                    if (!currentIndegrees.TryGetValue(dependentType, out int indegrees)) {
-                        continue;
-                    }
-
+                    int indegrees = indegreesForType[dependentType];
                     indegrees--;
-                    currentIndegrees[dependentType] = indegrees;
 
                     if (indegrees == 0) {
                         queue.Enqueue(dependentType);
                     }
-                }
-            }
 
-            if (visitedCount < currentIndegrees.Count) {
-                string missingDependenciesCycle = currentIndegrees.Keys
-                    .Where(namedDependency => currentIndegrees[namedDependency] > 0)
-                    .Where(dependency => IsMeaningfulDependency(dependency))
-                    .Aggregate("", (current, namedDependency) => current + ConstructMissingDependencyStringForType(namedDependency));
-                if (!string.IsNullOrEmpty(missingDependenciesCycle)) {
-                    throw new MissingDependencyException(
-                        $"Circular dependency detected or missing dependencies preventing graph completion. problematic dependencies:\n{missingDependenciesCycle}");
+                    indegreesForType[dependentType] = indegrees;
                 }
             }
 
             string missingDependencies = "";
             bool incompleteGraph = false;
+            foreach (NamedDependency namedDependency in indegreesForType.Keys) {
+                if (indegreesForType[namedDependency] > 0) {
 
-            foreach (NamedDependency namedDependency in indegreesForType.Keys
-                         .Where(namedDependency => currentIndegrees.ContainsKey(namedDependency) &&
-                                                   currentIndegrees[namedDependency] > 0)
-                         .Where(dependency => IsMeaningfulDependency(dependency))) {
-                missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
-                incompleteGraph = true;
+                    if (!IsMeaningfulDependency(namedDependency)) {
+                        //Even though we don't fully provide this dependency it's not explicitly declared by
+                        //one of the passed modules in the graph, so we can ignore it
+                        continue;
+                    }
+
+                    missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
+                    incompleteGraph = true;
+                }
             }
 
             if (incompleteGraph) {
