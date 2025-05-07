@@ -293,10 +293,7 @@ namespace Syrup.Framework {
                 string missingDependenciesCycle = currentIndegrees.Keys
                     .Where(namedDependency => currentIndegrees[namedDependency] > 0)
                     .Where(dependency => IsMeaningfulDependency(dependency))
-                    .Aggregate("",
-                        (current, namedDependency) => current +
-                                                      ConstructMissingDependencyStringForType(
-                                                          namedDependency));
+                    .Aggregate("", (current, namedDependency) => current + ConstructMissingDependencyStringForType(namedDependency));
                 if (!string.IsNullOrEmpty(missingDependenciesCycle)) {
                     throw new MissingDependencyException(
                         $"Circular dependency detected or missing dependencies preventing graph completion. problematic dependencies:\n{missingDependenciesCycle}");
