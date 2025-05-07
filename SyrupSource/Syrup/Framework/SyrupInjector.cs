@@ -271,7 +271,7 @@ namespace Syrup.Framework {
             if (visitedCount < currentIndegrees.Count) {
                 string missingDependenciesCycle = currentIndegrees.Keys
                     .Where(namedDependency => currentIndegrees[namedDependency] > 0)
-                    .Where(IsMeaningfulDependency)
+                    .Where(dependency => IsMeaningfulDependency(dependency))
                     .Aggregate("",
                         (current, namedDependency) => current +
                                                       ConstructMissingDependencyStringForType(
@@ -288,7 +288,7 @@ namespace Syrup.Framework {
             foreach (NamedDependency namedDependency in indegreesForType.Keys
                          .Where(namedDependency => currentIndegrees.ContainsKey(namedDependency) &&
                                                    currentIndegrees[namedDependency] > 0)
-                         .Where(IsMeaningfulDependency)) {
+                         .Where(dependency => IsMeaningfulDependency(dependency))) {
                 missingDependencies += ConstructMissingDependencyStringForType(namedDependency);
                 incompleteGraph = true;
             }
@@ -495,7 +495,7 @@ namespace Syrup.Framework {
             return dependencySource switch {
                 DependencySource.PROVIDER or DependencySource.DECLARATIVE => true,
                 DependencySource.CONSTRUCTOR => paramOfDependencies.TryGetValue(namedDependency,
-                    out HashSet<NamedDependency> dependency) && dependency.Any(IsMeaningfulDependency),
+                    out HashSet<NamedDependency> dependency) && dependency.Any(dep => IsMeaningfulDependency(dep)),
                 _ => false
             };
         }
@@ -546,8 +546,7 @@ namespace Syrup.Framework {
                     }
 
                     if (dependencyInfo.InjectableFields != null) {
-                        parameters.AddRange(
-                            dependencyInfo.InjectableFields.Select(GetNamedDependencyForField));
+                        parameters.AddRange(dependencyInfo.InjectableFields.Select(param => GetNamedDependencyForField(param)));
                     }
 
                     if (dependencyInfo.InjectableMethods != null) {
