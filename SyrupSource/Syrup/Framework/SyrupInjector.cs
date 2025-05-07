@@ -104,7 +104,7 @@ namespace Syrup.Framework {
 
                     if (dependencySources.ContainsKey(namedDependency) &&
                         dependencySources[namedDependency].DependencySource is DependencySource.DECLARATIVE or DependencySource.PROVIDER) {
-                        throw new DuplicateProviderException(
+                        throw new DuplicateDeclarativeException(
                             $"A binding for the specified dependency '{namedDependency}' has already been registered!");
                     }
 
