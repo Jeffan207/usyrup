@@ -122,7 +122,7 @@ namespace Syrup.Framework {
                              $"A binding for the specified dependency '{namedDeclBinding}' has already been registered!");
                      }
 
-                     DependencyInfo declDependencyInfo = new() {
+                     DependencyInfo dependencyInfo = new() {
                          DependencySource = DependencySource.DECLARATIVE,
                          Type = binding.BoundService,
                          IsSingleton = binding.IsSingleton,
@@ -148,7 +148,7 @@ namespace Syrup.Framework {
                          }
 
                          ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
-                         declDependencyInfo.Constructor = implConstructor;
+                         dependencyInfo.Constructor = implConstructor;
 
                          foreach (ParameterInfo param in implConstructor.GetParameters()) {
                              declUniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -158,7 +158,7 @@ namespace Syrup.Framework {
                          foreach (FieldInfo injectableField in injectableFields) {
                              declUniqueParameters.Add(GetNamedDependencyForField(injectableField));
                          }
-                         declDependencyInfo.InjectableFields = injectableFields;
+                         dependencyInfo.InjectableFields = injectableFields;
 
                          MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(binding.ImplementationType);
                          foreach (MethodInfo injectableMethod in injectableMethods) {
@@ -166,7 +166,7 @@ namespace Syrup.Framework {
                                  declUniqueParameters.Add(GetNamedDependencyForParam(param));
                              }
                          }
-                         declDependencyInfo.InjectableMethods = injectableMethods;
+                         dependencyInfo.InjectableMethods = injectableMethods;
                          requiredParamsCount = declUniqueParameters.Count;
                      } else {
                          throw new InvalidOperationException(
@@ -174,7 +174,7 @@ namespace Syrup.Framework {
                      }
 
                      indegreesForType[namedDeclBinding] = requiredParamsCount;
-                     dependencySources[namedDeclBinding] = declDependencyInfo;
+                     dependencySources[namedDeclBinding] = dependencyInfo;
                      AddDependenciesForParam(namedDeclBinding, declUniqueParameters.ToList());
                 }
                 // --- End: Processing declarative bindings for the current module ---
