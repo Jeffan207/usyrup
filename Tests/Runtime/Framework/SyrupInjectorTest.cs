@@ -12,7 +12,8 @@ using UnityEngine.TestTools;
 public class SyrupInjectorTest {
 
     SyrupInjectorOptions OPTIONS = new() {
-        VerboseLogging = true
+        VerboseLogging = true,
+        EnableAutomaticConstructorSelection = true
     };
 
 
@@ -731,7 +732,7 @@ public class SyrupInjectorTest {
 
     [Test]
     public void TestDeclarative_Error_AmbiguousConstructor_ThrowsException() {
-        Assert.Throws<InvalidOperationException>(() => {
+        Assert.Throws<NoSuitableConstructorFoundException>(() => {
             // This module binds AmbiguousConstructorClass which has multiple non-annotated, non-parameterless constructors
             new SyrupInjector(OPTIONS, new DeclarativeAmbiguousConstructorModule());
         });
@@ -784,7 +785,7 @@ public class SyrupInjectorTest {
         // DeclarativeNoPublicConstructorModule binds NoPublicConstructorClass to itself.
         // NoPublicConstructorClass has no public constructors.
         var module = new DeclarativeNoPublicConstructorModule(); // Needs to be created
-        Assert.Throws<MissingMemberException>(() => {
+        Assert.Throws<NoSuitableConstructorFoundException>(() => {
             // Expect MissingMemberException when BuildDependency tries Activator.CreateInstance
             var injector = new SyrupInjector(OPTIONS, module);
             injector.GetInstance<NoPublicConstructorClass>();

@@ -28,6 +28,7 @@ namespace Syrup.Framework {
         private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies;
 
         private bool verboseLogging = false;
+        private bool enableAutomaticConstructorSelection = false;
 
         //Dependencies that have been fully constructed
         private readonly Dictionary<NamedDependency, object> fulfilledDependencies;
@@ -42,6 +43,7 @@ namespace Syrup.Framework {
 
         public SyrupInjector(SyrupInjectorOptions syrupInjectorOptions, params ISyrupModule[] modules) {
             verboseLogging = syrupInjectorOptions.VerboseLogging;
+            enableAutomaticConstructorSelection = syrupInjectorOptions.EnableAutomaticConstructorSelection;
 
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
             paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
@@ -122,7 +124,7 @@ namespace Syrup.Framework {
                     if (binding.Instance != null) {
                         requiredParamsCount = 0;
                     } else if (binding.ImplementationType != null) {
-                        ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType);
+                        ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
                         dependencyInfo.Constructor = implConstructor;
 
                         if (implConstructor != null) {
@@ -434,13 +436,13 @@ namespace Syrup.Framework {
                     break;
                 case DependencySource.DECLARATIVE when dependencyInfo.ImplementationType != null: {
                     ConstructorInfo constructorToUse = dependencyInfo.Constructor;
-                    if (constructorToUse != null) {
-                        object[] parameters = GetConstructorParameters(constructorToUse);
-                        dependency = constructorToUse.Invoke(parameters);
-                    } else {
-                        throw new MissingMemberException(
+                    if (constructorToUse == null) {
+                        throw new NoSuitableConstructorFoundException(
                             $"Cannot create instance of '{dependencyInfo.ImplementationType.FullName}' for declarative binding '{dependencyToBuild}'. No suitable constructor found or specified during registration.");
                     }
+
+                    object[] parameters = GetConstructorParameters(constructorToUse);
+                    dependency = constructorToUse.Invoke(parameters);
 
                     InjectObject(dependency, dependencyInfo.InjectableFields,
                         dependencyInfo.InjectableMethods);
@@ -673,14 +675,14 @@ namespace Syrup.Framework {
             }
         }
 
-        private static ConstructorInfo SelectConstructorForType(Type type) {
+        private static ConstructorInfo SelectConstructorForType(Type type, bool enableAutomaticSelection) {
             if (type.IsAbstract || type.IsInterface || IsStatic(type)) {
-                return null;
+                throw new NoSuitableConstructorFoundException($"Cannot select constructor for type '{type.FullName}'. It is abstract, an interface, or a static class and cannot be instantiated.");
             }
 
             ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
             if (!constructors.Any()) {
-                return null;
+                throw new NoSuitableConstructorFoundException($"Cannot select constructor for type '{type.FullName}'. No public constructors found.");
             }
 
             List<ConstructorInfo> injectAnnotatedConstructors = constructors
@@ -689,10 +691,16 @@ namespace Syrup.Framework {
 
             switch (injectAnnotatedConstructors.Count) {
                 case > 1:
-                    throw new InvalidOperationException(
+                    throw new NoSuitableConstructorFoundException(
                         $"Type '{type.FullName}' has multiple constructors annotated with [Inject].");
                 case 1:
                     return injectAnnotatedConstructors.First();
+            }
+
+            if (!enableAutomaticSelection) {
+                throw new NoSuitableConstructorFoundException(
+                    $"Type '{type.FullName}' has public constructors but none are annotated with [Inject]. " +
+                    "Automatic constructor selection is disabled. Explicitly mark a constructor with [Inject] or enable automatic selection in SyrupComponent options.");
             }
 
             if (constructors.Length == 1) {
@@ -704,12 +712,9 @@ namespace Syrup.Framework {
                 return parameterlessConstructor;
             }
 
-            if (constructors.Length > 1) {
-                throw new InvalidOperationException(
-                    $"Type {type.FullName} has multiple public constructors and none are marked with [Inject] or are parameterless. Cannot determine which to use for declarative binding.");
-            }
-
-            return null;
+            throw new NoSuitableConstructorFoundException(
+                $"Type '{type.FullName}' has public constructors but none are annotated with [Inject]. " +
+                "EnableAutomaticConstructorSelection is true, but no single constructor or parameterless constructor was found among multiple options.");
         }
 
         private static bool IsStatic(Type type) => type.IsAbstract && type.IsSealed;
