@@ -683,7 +683,7 @@ public class SyrupInjectorTest {
     [Test]
     public void TestDeclarative_DuplicateProviderAndDeclarativeBinding() {
         Assert.Throws<DuplicateDeclarativeException>(() =>
-            new SyrupInjector(OPTIONS, new DeclarativeProviderPrecedenceModule()));
+            new SyrupInjector(OPTIONS, new DeclarativeProviderDuplicateModule()));
     }
 
     [Test]

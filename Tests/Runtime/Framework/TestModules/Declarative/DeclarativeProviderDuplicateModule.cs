@@ -5,7 +5,7 @@ using Tests.Framework.TestData;
 
 namespace Tests.Framework.TestModules {
     // For testing Provider and Declarative duplication.
-    public class DeclarativeProviderPrecedenceModule : ISyrupModule {
+    public class DeclarativeProviderDuplicateModule : ISyrupModule {
         public const string ProvidedId = "FROM_PROVIDER";
 
         [Provides]
