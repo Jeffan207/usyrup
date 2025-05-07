@@ -29,11 +29,11 @@ namespace Syrup.Framework.Declarative {
         public void ToInstance(TService instance) {
             // If ToInstance is called, it takes precedence.
             // Clear any potentially pre-filled ImplementationType from a default self-binding.
-            _binding.ImplementationType = null; 
+            _binding.ImplementationType = null;
 
             _binding.Instance = instance;
             // ToInstance implies a singleton for that specific instance.
-            _binding.IsSingleton = true; 
+            _binding.IsSingleton = true;
         }
     }
 }
