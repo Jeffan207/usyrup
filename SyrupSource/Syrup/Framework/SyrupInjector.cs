@@ -131,7 +131,7 @@ namespace Syrup.Framework {
                      };
 
                      int requiredParamsCount;
-                     HashSet<NamedDependency> declUniqueParameters = new HashSet<NamedDependency>();
+                     HashSet<NamedDependency> uniqueParameters = new HashSet<NamedDependency>();
 
                      if (binding.Instance != null) {
                          if (IsLazyWrapped(binding.Instance.GetType())) {
@@ -151,23 +151,23 @@ namespace Syrup.Framework {
                          dependencyInfo.Constructor = implConstructor;
 
                          foreach (ParameterInfo param in implConstructor.GetParameters()) {
-                             declUniqueParameters.Add(GetNamedDependencyForParam(param));
+                             uniqueParameters.Add(GetNamedDependencyForParam(param));
                          }
 
                          FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(binding.ImplementationType);
                          foreach (FieldInfo injectableField in injectableFields) {
-                             declUniqueParameters.Add(GetNamedDependencyForField(injectableField));
+                             uniqueParameters.Add(GetNamedDependencyForField(injectableField));
                          }
                          dependencyInfo.InjectableFields = injectableFields;
 
                          MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(binding.ImplementationType);
                          foreach (MethodInfo injectableMethod in injectableMethods) {
                              foreach (ParameterInfo param in injectableMethod.GetParameters()) {
-                                 declUniqueParameters.Add(GetNamedDependencyForParam(param));
+                                 uniqueParameters.Add(GetNamedDependencyForParam(param));
                              }
                          }
                          dependencyInfo.InjectableMethods = injectableMethods;
-                         requiredParamsCount = declUniqueParameters.Count;
+                         requiredParamsCount = uniqueParameters.Count;
                      } else {
                          throw new InvalidOperationException(
                              $"Declarative binding for '{namedDeclBinding}' is incomplete. If '{namedDeclBinding.type.FullName}' is an interface or abstract class, you must call .To<TImplementation>() or .ToInstance(). If it is a concrete class, this indicates an issue with the default self-binding.");
@@ -175,7 +175,7 @@ namespace Syrup.Framework {
 
                      indegreesForType[namedDeclBinding] = requiredParamsCount;
                      dependencySources[namedDeclBinding] = dependencyInfo;
-                     AddDependenciesForParam(namedDeclBinding, declUniqueParameters.ToList());
+                     AddDependenciesForParam(namedDeclBinding, uniqueParameters.ToList());
                 }
                 // --- End: Processing declarative bindings for the current module ---
             }
