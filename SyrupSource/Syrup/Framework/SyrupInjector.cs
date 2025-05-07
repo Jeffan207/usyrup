@@ -127,10 +127,8 @@ namespace Syrup.Framework {
                         ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
                         dependencyInfo.Constructor = implConstructor;
 
-                        if (implConstructor != null) {
-                            foreach (ParameterInfo param in implConstructor.GetParameters()) {
-                                uniqueParameters.Add(GetNamedDependencyForParam(param));
-                            }
+                        foreach (ParameterInfo param in implConstructor.GetParameters()) {
+                            uniqueParameters.Add(GetNamedDependencyForParam(param));
                         }
 
                         FieldInfo[] injectableFields =
