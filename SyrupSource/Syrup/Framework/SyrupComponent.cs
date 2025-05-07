@@ -34,6 +34,12 @@ namespace Syrup.Framework {
                  "This way you will be able to use the injected objects in methods like OnEnable.")]
         private bool injectInAwake = false;
 
+        [SerializeField]
+        [Tooltip("If enabled, the injector will automatically select a public constructor if it's the only one, " +
+                 "or a parameterless public constructor if multiple exist and none are marked with [Inject]. " +
+                 "By default, an [Inject] attribute is required if any public constructors are present.")]
+        private bool enableAutomaticConstructorSelection = false;
+
         private void Awake() {
             ISyrupModule[] syrupModules = GetComponents<ISyrupModule>();
 
@@ -42,6 +48,7 @@ namespace Syrup.Framework {
             } else {
                 SyrupInjectorOptions syrupInjectorOptions = new();
                 syrupInjectorOptions.VerboseLogging = verboseLogging;
+                syrupInjectorOptions.EnableAutomaticConstructorSelection = enableAutomaticConstructorSelection;
                 SyrupInjector = new SyrupInjector(syrupInjectorOptions, syrupModules);
             }
 
