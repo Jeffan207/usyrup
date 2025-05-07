@@ -674,7 +674,7 @@ namespace Syrup.Framework {
         }
 
         private static ConstructorInfo SelectConstructorForType(Type type) {
-            if (type == null || type.IsAbstract || type.IsInterface || IsStatic(type)) {
+            if (type.IsAbstract || type.IsInterface || IsStatic(type)) {
                 return null;
             }
 
