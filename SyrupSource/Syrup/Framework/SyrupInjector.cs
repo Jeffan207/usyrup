@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Annotations;
 using Syrup.Framework.Attributes;
 using Syrup.Framework.Containers;
 using Syrup.Framework.Declarative;
@@ -123,6 +124,9 @@ namespace Syrup.Framework {
 
                     if (binding.Instance != null) {
                         requiredParamsCount = 0;
+                    } else if (typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
+                        throw new InvalidOperationException(
+                            "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
                     } else if (binding.ImplementationType != null) {
                         ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
                         dependencyInfo.Constructor = implConstructor;
@@ -172,7 +176,7 @@ namespace Syrup.Framework {
             foreach (ConstructorInfo constructor in injectedConstructors) {
 
                 //You cannot name a constructor in constructor injection, so treat the name as null
-                var constructorDeclaringType = constructor.DeclaringType;
+                Type constructorDeclaringType = constructor.DeclaringType;
                 NamedDependency namedDependency = new NamedDependency(null, constructorDeclaringType);
                 bool isSingleton = constructorDeclaringType.GetCustomAttribute<Singleton>() != null;
 
@@ -568,7 +572,7 @@ namespace Syrup.Framework {
             }
 
             List<string> missingParams = new List<string>();
-            foreach (var namedParam in parameters) {
+            foreach (NamedDependency namedParam in parameters) {
                 if (!dependencySources.ContainsKey(namedParam)) {
                     continue;
                 }
