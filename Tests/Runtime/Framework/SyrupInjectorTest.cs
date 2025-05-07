@@ -886,6 +886,20 @@ public class SyrupInjectorTest {
     [Test]
     public void TestDeclarative_ValueType_NoSuitableConstructor_OptionTrue_Throws() {
         var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = true };
+        Assert.Throws<MissingDependencyException>(() =>
+            new SyrupInjector(options, new DeclarativeValueTypeNoSuitableConstructorModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_ValueType_Parameterless_NoSuitableConstructor_OptionTrue_Throws() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = true };
+        Assert.Throws<NoSuitableConstructorFoundException>(() =>
+            new SyrupInjector(options, new DeclarativeValueTypeImplicitParameterlessConstructorOptionTrueModule()));
+    }
+
+    [Test]
+    public void TestDeclarative_ValueType_Parameterless_NoSuitableConstructor_OptionFalse_Throws() {
+        var options = new SyrupInjectorOptions { EnableAutomaticConstructorSelection = false };
         Assert.Throws<NoSuitableConstructorFoundException>(() =>
             new SyrupInjector(options, new DeclarativeValueTypeImplicitParameterlessConstructorOptionTrueModule()));
     }
