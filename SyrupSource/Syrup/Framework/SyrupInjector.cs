@@ -103,6 +103,12 @@ namespace Syrup.Framework {
                 module.Configure(binder);
 
                 foreach (Binding binding in binder.GetBindings()) {
+                    if (IsLazyWrapped(binding.BoundService)) {
+                        throw new InvalidOperationException(
+                            $"Cannot explicitly bind the LazyObject wrapper type '{binding.BoundService.FullName}' for service '{binding.Name}'. " +
+                            $"Syrup automatically handles LazyObject<T> for dependencies. Bind the underlying type '{GetContainedType(binding.BoundService).FullName}' instead.");
+                    }
+
                     NamedDependency namedDependency = new NamedDependency(binding.Name, binding.BoundService);
 
                     if (dependencySources.ContainsKey(namedDependency) &&
@@ -123,11 +129,22 @@ namespace Syrup.Framework {
                     HashSet<NamedDependency> uniqueParameters = new HashSet<NamedDependency>();
 
                     if (binding.Instance != null) {
+                        if (IsLazyWrapped(binding.Instance.GetType())) {
+                            throw new InvalidOperationException(
+                                $"Cannot use ToInstance() with an explicit LazyObject instance for service '{namedDependency}' (bound type: '{binding.BoundService.FullName}'). " +
+                                $"Syrup automatically handles LazyObject<T> for dependencies. Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' instead.");
+                        }
                         requiredParamsCount = 0;
                     } else if (typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
                         throw new InvalidOperationException(
                             "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
                     } else if (binding.ImplementationType != null) {
+                        if (IsLazyWrapped(binding.ImplementationType)) {
+                            throw new InvalidOperationException(
+                                $"Cannot use To<{binding.ImplementationType.FullName}>() with an explicit LazyObject type for service '{namedDependency}' (bound type: '{binding.BoundService.FullName}'). " +
+                                $"Syrup automatically handles LazyObject<T> for dependencies. Use To<{GetContainedType(binding.ImplementationType).FullName}>() for the underlying type instead.");
+                        }
+
                         ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
                         dependencyInfo.Constructor = implConstructor;
 
