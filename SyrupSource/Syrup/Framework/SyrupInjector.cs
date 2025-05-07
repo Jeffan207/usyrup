@@ -567,11 +567,15 @@ namespace Syrup.Framework {
                         $"'{namedDependency}' has an unknown dependency source '{dependencyInfo.DependencySource}'.\n";
             }
 
-            List<string> missingParams = (from namedParam in parameters
-                where !dependencySources.ContainsKey(namedParam) ||
-                      (indegreesForType.ContainsKey(namedParam) &&
-                       indegreesForType[namedParam] > 0 && IsMeaningfulDependency(namedParam))
-                select namedParam.ToString()).ToList();
+            List<string> missingParams = new List<string>();
+            foreach (var namedParam in parameters) {
+                if (!dependencySources.ContainsKey(namedParam)) {
+                    continue;
+                }
+                if (indegreesForType.ContainsKey(namedParam) && indegreesForType[namedParam] > 0 && IsMeaningfulDependency(namedParam)) {
+                    missingParams.Add(namedParam.ToString());
+                }
+            }
 
             return missingParams.Any()
                 ? $"'{namedDependency}' is missing the following dependencies: '{string.Join(", ", missingParams)}'\n"
