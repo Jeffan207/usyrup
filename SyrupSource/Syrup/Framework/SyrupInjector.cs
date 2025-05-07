@@ -129,21 +129,6 @@ namespace Syrup.Framework {
                             foreach (ParameterInfo param in implConstructor.GetParameters()) {
                                 uniqueParameters.Add(GetNamedDependencyForParam(param));
                             }
-                        } else if (!binding.ImplementationType.IsValueType &&
-                                   !IsStatic(binding.ImplementationType) &&
-                                   !binding.ImplementationType.IsAbstract &&
-                                   !binding.ImplementationType.IsInterface &&
-                                   binding.ImplementationType
-                                       .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
-                                       .Any(c => c.GetParameters().Length == 0)) {
-                            // Handled by SelectConstructorForType
-                        } else if (binding.ImplementationType.IsValueType ||
-                                   (IsStatic(binding.ImplementationType) && binding
-                                       .ImplementationType
-                                       .GetConstructors(BindingFlags.Public |
-                                                        BindingFlags.Instance | BindingFlags.Static)
-                                       .All(c => c.GetParameters().Length > 0 || !c.IsPublic))) {
-                            // Value types or unconstructable static classes
                         }
 
                         FieldInfo[] injectableFields =
