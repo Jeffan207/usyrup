@@ -509,13 +509,13 @@ namespace Syrup.Framework {
             switch (dependencyInfo.DependencySource) {
                 case DependencySource.PROVIDER:
                     parameters = dependencyInfo.ProviderMethod.GetParameters()
-                        .Select(GetNamedDependencyForParam)
+                        .Select(param => GetNamedDependencyForParam(param))
                         .ToList();
                     break;
                 case DependencySource.CONSTRUCTOR: {
                     parameters.AddRange(
                         dependencyInfo.Constructor.GetParameters()
-                            .Select(GetNamedDependencyForParam)
+                            .Select(param => GetNamedDependencyForParam(param))
                             .ToList());
                     if (dependencyInfo.InjectableFields != null) {
                         parameters.AddRange(
@@ -526,7 +526,7 @@ namespace Syrup.Framework {
                         foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
                             parameters.AddRange(
                                 injectableMethod.GetParameters()
-                                    .Select(GetNamedDependencyForParam)
+                                    .Select(param => GetNamedDependencyForParam(param))
                                     .ToList());
                         }
                     }
@@ -540,7 +540,7 @@ namespace Syrup.Framework {
                     if (dependencyInfo.Constructor != null) {
                         parameters.AddRange(
                             dependencyInfo.Constructor.GetParameters()
-                                .Select(GetNamedDependencyForParam)
+                                .Select(param => GetNamedDependencyForParam(param))
                                 .ToList());
                     }
 
@@ -553,7 +553,7 @@ namespace Syrup.Framework {
                         foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
                             parameters.AddRange(
                                 injectableMethod.GetParameters()
-                                    .Select(GetNamedDependencyForParam)
+                                    .Select(param => GetNamedDependencyForParam(param))
                                     .ToList());
                         }
                     }
