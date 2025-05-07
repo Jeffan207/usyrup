@@ -572,7 +572,7 @@ namespace Syrup.Framework {
                 if (!dependencySources.ContainsKey(namedParam)) {
                     continue;
                 }
-                if (indegreesForType.ContainsKey(namedParam) && indegreesForType[namedParam] > 0 && IsMeaningfulDependency(namedParam)) {
+                if (indegreesForType.ContainsKey(namedParam) && indegreesForType[namedParam] > 0) {
                     missingParams.Add(namedParam.ToString());
                 }
             }
