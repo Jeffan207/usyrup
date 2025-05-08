@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using JetBrains.Annotations;
 using Syrup.Framework.Attributes;
 using Syrup.Framework.Containers;
 using Syrup.Framework.Declarative;
