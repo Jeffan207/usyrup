@@ -904,5 +904,28 @@ public class SyrupInjectorTest {
             new SyrupInjector(options, new DeclarativeValueTypeImplicitParameterlessConstructorOptionTrueModule()));
     }
 
+    [Test]
+    public void TestDeclarative_ToImplementation_IsNotEagerlyInitialized() {
+        // Arrange
+        DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1 = false; // Reset static flag
+        var module = new DeclarativeBasicModule(); // Uses To<DeclarativeServiceImpl1>()
+
+        // Act: Configure the injector
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        // Assert: Instance should not be created just by configuring the injector
+        Assert.IsFalse(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1, 
+            "Instance should NOT be created just by SyrupInjector initialization with the module.");
+
+        // Act: Resolve the instance for the first time
+        var instance = injector.GetInstance<IDeclarativeService>();
+
+        // Assert: Instance should be created now
+        Assert.IsTrue(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1, 
+            "Instance SHOULD be created after GetInstance() is called for the first time.");
+        Assert.IsNotNull(instance);
+        Assert.IsInstanceOf<DeclarativeServiceImpl1>(instance);
+    }
+
     #endregion
 }
