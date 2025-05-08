@@ -141,7 +141,7 @@ namespace Syrup.Framework {
                                  "This is often not the intended behavior for lazy loading. " +
                                  "Syrup automatically handles LazyObject<T> for dependencies. " +
                                  $"Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' to ToInstance(). " +
-                                 $"If true lazy instantiation for '{binding.BoundService.FullName}' is required, consider using a provider method or a .To<Implementation>() binding.");
+                                 $"If lazy instantiation for '{binding.BoundService.FullName}' is required, consider using a provider method or a .To<Implementation>() binding.");
                          }
                          requiredParamsCount = 0;
                      } else if (binding.ImplementationType != null) {
