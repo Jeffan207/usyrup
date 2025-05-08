@@ -136,7 +136,12 @@ namespace Syrup.Framework {
                          if (IsLazyWrapped(binding.Instance.GetType())) {
                              throw new InvalidOperationException(
                                  $"Cannot use ToInstance() with an explicit LazyObject instance for service '{namedDeclBinding}' (bound type: '{binding.BoundService.FullName}'). " +
-                                 $"Syrup automatically handles LazyObject<T> for dependencies. Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' instead.");
+                                 "Instances supplied to ToInstance() are inherently eager. " +
+                                 "Passing a LazyObject here means the LazyObject wrapper itself becomes the managed instance, not its potentially deferred value. " +
+                                 "This is often not the intended behavior for lazy loading. " +
+                                 "Syrup automatically handles LazyObject<T> for dependencies. " +
+                                 $"Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' to ToInstance(). " +
+                                 $"If true lazy instantiation for '{binding.BoundService.FullName}' is required, consider using a provider method or a .To<Implementation>() binding.");
                          }
                          requiredParamsCount = 0;
                      } else if (binding.ImplementationType != null) {
