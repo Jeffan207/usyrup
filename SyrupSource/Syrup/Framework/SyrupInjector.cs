@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Syrup.Framework.Exceptions;
 using Syrup.Framework.Attributes;
+using Syrup.Framework.Containers;
+using Syrup.Framework.Declarative;
+using Syrup.Framework.Exceptions;
 using Syrup.Framework.Model;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Syrup.Framework.Containers;
+using Binder = Syrup.Framework.Declarative.Binder;
 
 namespace Syrup.Framework {
 
@@ -26,11 +28,12 @@ namespace Syrup.Framework {
         private readonly Dictionary<NamedDependency, HashSet<NamedDependency>> paramOfDependencies;
 
         private bool verboseLogging = false;
+        private bool enableAutomaticConstructorSelection = false;
 
         //Dependencies that have been fully constructed
-        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;        
+        private readonly Dictionary<NamedDependency, object> fulfilledDependencies;
 
-        public SyrupInjector(params ISyrupModule[] modules) {            
+        public SyrupInjector(params ISyrupModule[] modules) {
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
             paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
             fulfilledDependencies = new Dictionary<NamedDependency, object>();
@@ -40,6 +43,7 @@ namespace Syrup.Framework {
 
         public SyrupInjector(SyrupInjectorOptions syrupInjectorOptions, params ISyrupModule[] modules) {
             verboseLogging = syrupInjectorOptions.VerboseLogging;
+            enableAutomaticConstructorSelection = syrupInjectorOptions.EnableAutomaticConstructorSelection;
 
             dependencySources = new Dictionary<NamedDependency, DependencyInfo>();
             paramOfDependencies = new Dictionary<NamedDependency, HashSet<NamedDependency>>();
@@ -51,16 +55,16 @@ namespace Syrup.Framework {
         internal void AddSyrupModules(params ISyrupModule[] modules) {
             indegreesForType = new Dictionary<NamedDependency, int>();
 
-            //Fetch all provider methods declared in all provided modules
+            // Merged loop for processing both providers and declarative bindings per module
             foreach (ISyrupModule module in modules) {
-                var providerMethods = module.GetType().GetMethods()
+                // --- Start: Processing [Provides] methods for the current module ---
+                IEnumerable<MethodInfo> providerMethods = module.GetType().GetMethods()
                     .Where(x => x.GetCustomAttributes(typeof(Provides), false).FirstOrDefault() != null);
 
                 foreach (MethodInfo methodInfo in providerMethods) {
                     if (IsLazyWrapped(methodInfo.ReturnType)) {
-                        throw new InvalidProvidedDependencyException(string.Format(
-                                "A provider is trying to provide a Lazy type explicitly for '{0}', try pushing the Lazy type down onto the consuming class instead",
-                                methodInfo.ReturnType.FullName));
+                        throw new InvalidProvidedDependencyException(
+                            $"A provider is trying to provide a Lazy type explicitly for '{methodInfo.ReturnType.FullName}', try pushing the Lazy type down onto the consuming class instead");
                     }
 
                     Named dependencyName = methodInfo.GetCustomAttribute<Named>();
@@ -71,9 +75,9 @@ namespace Syrup.Framework {
                     //This is a convenient place to check if multiple providers for a single type have been declared
                     if (indegreesForType.ContainsKey(namedDependency)) {
                         throw new DuplicateProviderException
-                            (string.Format("A provider for the specified dependency '{0}' already exists!",
-                            namedDependency));
-                    }                   
+                            ($"A provider for the specified dependency '{namedDependency}' already exists!");
+                    }
+
                     HashSet<NamedDependency> uniqueParameters = new();
                     foreach (ParameterInfo param in methodInfo.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -91,21 +95,109 @@ namespace Syrup.Framework {
                     dependencySources[namedDependency] = dependencyInfo;
                     AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
                 }
+                // --- End: Processing [Provides] methods for the current module ---
+
+                // --- Start: Processing declarative bindings for the current module ---
+                Binder binder = new Binder();
+                module.Configure(binder);
+
+                foreach (Binding binding in binder.GetBindings()) {
+                     if (IsLazyWrapped(binding.BoundService)) {
+                        throw new InvalidOperationException(
+                            $"Cannot explicitly bind the LazyObject wrapper type '{binding.BoundService.FullName}' for service '{binding.Name}'. " +
+                            $"Syrup automatically handles LazyObject<T> for dependencies. Bind the underlying type '{GetContainedType(binding.BoundService).FullName}' instead.");
+                     }
+
+                     if (binding.Instance == null && typeof(MonoBehaviour).IsAssignableFrom(binding.ImplementationType)) {
+                         throw new InvalidOperationException(
+                             "MonoBehaviours cannot be instantiated by the injector, must be provided as an existing instance using ToInstance().");
+                     }
+
+                     NamedDependency namedDeclBinding = new NamedDependency(binding.Name, binding.BoundService);
+
+                     if (dependencySources.ContainsKey(namedDeclBinding) &&
+                         dependencySources[namedDeclBinding].DependencySource is DependencySource.DECLARATIVE or DependencySource.PROVIDER) {
+                         throw new DuplicateDeclarativeException(
+                             $"A binding for the specified dependency '{namedDeclBinding}' has already been registered!");
+                     }
+
+                     DependencyInfo dependencyInfo = new() {
+                         DependencySource = DependencySource.DECLARATIVE,
+                         Type = binding.BoundService,
+                         IsSingleton = binding.IsSingleton,
+                         ImplementationType = binding.ImplementationType,
+                         Instance = binding.Instance
+                     };
+
+                     int requiredParamsCount;
+                     HashSet<NamedDependency> uniqueParameters = new HashSet<NamedDependency>();
+
+                     if (binding.Instance != null) {
+                         if (IsLazyWrapped(binding.Instance.GetType())) {
+                             throw new InvalidOperationException(
+                                 $"Cannot use ToInstance() with an explicit LazyObject instance for service '{namedDeclBinding}' (bound type: '{binding.BoundService.FullName}'). " +
+                                 "Instances supplied to ToInstance() are inherently eager. " +
+                                 "Passing a LazyObject here means the LazyObject wrapper itself becomes the managed instance, not its potentially deferred value. " +
+                                 "This is often not the intended behavior for lazy loading. " +
+                                 "Syrup automatically handles LazyObject<T> for dependencies. " +
+                                 $"Provide an instance of the underlying type '{GetContainedType(binding.Instance.GetType()).FullName}' to ToInstance(). " +
+                                 $"If lazy instantiation for '{binding.BoundService.FullName}' is required, consider using a provider method or a .To<Implementation>() binding.");
+                         }
+                         requiredParamsCount = 0;
+                     } else if (binding.ImplementationType != null) {
+                         if (IsLazyWrapped(binding.ImplementationType)) {
+                             throw new InvalidOperationException(
+                                 $"Cannot use To<{binding.ImplementationType.FullName}>() with an explicit LazyObject type for service '{namedDeclBinding}' (bound type: '{binding.BoundService.FullName}'). " +
+                                 $"Syrup automatically handles LazyObject<T> for dependencies. Use To<{GetContainedType(binding.ImplementationType).FullName}>() for the underlying type instead.");
+                         }
+
+                         ConstructorInfo implConstructor = SelectConstructorForType(binding.ImplementationType, enableAutomaticConstructorSelection);
+                         dependencyInfo.Constructor = implConstructor;
+
+                         foreach (ParameterInfo param in implConstructor.GetParameters()) {
+                             uniqueParameters.Add(GetNamedDependencyForParam(param));
+                         }
+
+                         FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(binding.ImplementationType);
+                         foreach (FieldInfo injectableField in injectableFields) {
+                             uniqueParameters.Add(GetNamedDependencyForField(injectableField));
+                         }
+                         dependencyInfo.InjectableFields = injectableFields;
+
+                         MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(binding.ImplementationType);
+                         foreach (MethodInfo injectableMethod in injectableMethods) {
+                             foreach (ParameterInfo param in injectableMethod.GetParameters()) {
+                                 uniqueParameters.Add(GetNamedDependencyForParam(param));
+                             }
+                         }
+                         dependencyInfo.InjectableMethods = injectableMethods;
+                         requiredParamsCount = uniqueParameters.Count;
+                     } else {
+                         throw new InvalidOperationException(
+                             $"Declarative binding for '{namedDeclBinding}' is incomplete. If '{namedDeclBinding.type.FullName}' is an interface or abstract class, you must call .To<TImplementation>() or .ToInstance(). If it is a concrete class, this indicates an issue with the default self-binding.");
+                     }
+
+                     indegreesForType[namedDeclBinding] = requiredParamsCount;
+                     dependencySources[namedDeclBinding] = dependencyInfo;
+                     AddDependenciesForParam(namedDeclBinding, uniqueParameters.ToList());
+                }
+                // --- End: Processing declarative bindings for the current module ---
             }
 
             //Fetch all injectable constructors
-            var injectedConstructors = AppDomain.CurrentDomain
-                .GetAssemblies() // Returns all currenlty loaded assemblies
+            IEnumerable<ConstructorInfo> injectedConstructors = AppDomain.CurrentDomain
+                .GetAssemblies() // Returns all currently loaded assemblies
                 .SelectMany(x => x.GetTypes()) // returns all types defined in this assemblies
-                .Where(x => x.IsClass)
+                .Where(x => x.IsClass && !x.IsAbstract) // Exclude abstract classes as well since they cannot be initiated
                 .SelectMany(x => x.GetConstructors())
                 .Where(x => x.GetCustomAttributes(typeof(Inject), false).FirstOrDefault() != null);
 
             foreach (ConstructorInfo constructor in injectedConstructors) {
 
                 //You cannot name a constructor in constructor injection, so treat the name as null
-                NamedDependency namedDependency = new NamedDependency(null, constructor.DeclaringType);
-                bool isSingleton = constructor.DeclaringType.GetCustomAttribute<Singleton>() != null;
+                Type constructorDeclaringType = constructor.DeclaringType;
+                NamedDependency namedDependency = new NamedDependency(null, constructorDeclaringType);
+                bool isSingleton = constructorDeclaringType.GetCustomAttribute<Singleton>() != null;
 
                 if (indegreesForType.ContainsKey(namedDependency)) {
                     //Providers take precedence over constructors for injection.
@@ -118,12 +210,12 @@ namespace Syrup.Framework {
                     uniqueParameters.Add(GetNamedDependencyForParam(param));
                 }
 
-                var injectableFields = SyrupUtils.GetInjectableFieldsFromType(constructor.DeclaringType);
+                FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(constructorDeclaringType);
                 foreach (FieldInfo injectableField in injectableFields) {
                     uniqueParameters.Add(GetNamedDependencyForField(injectableField));
                 }
 
-                var injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructor.DeclaringType);               
+                MethodInfo[] injectableMethods = SyrupUtils.GetInjectableMethodsFromType(constructorDeclaringType);
                 foreach (MethodInfo injectableMethod in injectableMethods) {
                     foreach (ParameterInfo param in injectableMethod.GetParameters()) {
                         uniqueParameters.Add(GetNamedDependencyForParam(param));
@@ -135,7 +227,7 @@ namespace Syrup.Framework {
                 DependencyInfo dependencyInfo = new() {
                     DependencySource = DependencySource.CONSTRUCTOR,
                     Constructor = constructor,
-                    Type = constructor.DeclaringType,
+                    Type = constructorDeclaringType,
                     IsSingleton = isSingleton,
                     InjectableMethods = injectableMethods,
                     InjectableFields = injectableFields
@@ -145,7 +237,7 @@ namespace Syrup.Framework {
                 AddDependenciesForParam(namedDependency, uniqueParameters.ToList());
             }
 
-            ValidateDependencyGraph();  
+            ValidateDependencyGraph();
         }
 
         /// <summary>
@@ -154,12 +246,10 @@ namespace Syrup.Framework {
         /// </summary>
         private void AddDependenciesForParam(NamedDependency namedDependency, List<NamedDependency> namedParameters) {
             foreach (NamedDependency namedParam in namedParameters) {
-                HashSet<NamedDependency> dependentTypes;
-                if (paramOfDependencies.ContainsKey(namedParam)) {
-                    dependentTypes = paramOfDependencies[namedParam];
-                } else {
-                    dependentTypes = new HashSet<NamedDependency>();
-                }
+                HashSet<NamedDependency> dependentTypes =
+                    paramOfDependencies.TryGetValue(namedParam, out HashSet<NamedDependency> dependency)
+                        ? dependency
+                        : new HashSet<NamedDependency>();
                 dependentTypes.Add(namedDependency);
                 paramOfDependencies[namedParam] = dependentTypes;
             }
@@ -180,11 +270,10 @@ namespace Syrup.Framework {
 
             while (queue.Count > 0) {
                 NamedDependency namedDependency = queue.Dequeue();
-                if (!paramOfDependencies.ContainsKey(namedDependency)) {
+                if (!paramOfDependencies.TryGetValue(namedDependency, out var dependentTypes)) {
                     continue;
                 }
 
-                HashSet<NamedDependency> dependentTypes = paramOfDependencies[namedDependency];
                 foreach (NamedDependency dependentType in dependentTypes) {
                     int indegrees = indegreesForType[dependentType];
                     indegrees--;
@@ -215,11 +304,9 @@ namespace Syrup.Framework {
 
             if (incompleteGraph) {
                 throw new MissingDependencyException(
-                    string.Format(
-                        "Incomplete dependency graph. The following dependencies are missing from the completed graph:\n{0}",
-                    missingDependencies));
+                    $"Incomplete dependency graph. The following dependencies are missing from the completed graph:\n{missingDependencies}");
             }
-        }        
+        }
 
         /// <summary>
         /// This method (and it's sister field method) should be used for
@@ -228,7 +315,7 @@ namespace Syrup.Framework {
         /// </summary>
         private NamedDependency GetNamedDependencyForParam(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
-            string name = dependencyName != null ? dependencyName.name : null;           
+            string name = dependencyName != null ? dependencyName.name : null;
             Type paramType = GetContainedType(param.ParameterType);
             return new NamedDependency(name, paramType);
         }
@@ -248,13 +335,15 @@ namespace Syrup.Framework {
         private NamedDependency GetNamedDependencyForParamInjection(ParameterInfo param) {
             Named dependencyName = param.GetCustomAttribute<Named>();
             string name = dependencyName != null ? dependencyName.name : null;
-            return new NamedDependency(name, param.ParameterType);
+            Type paramType = param.ParameterType;
+            return new NamedDependency(name, paramType);
         }
 
         private NamedDependency GetNamedDependencyForFieldInjection(FieldInfo field) {
             Named dependencyName = field.GetCustomAttribute<Named>();
             string name = dependencyName != null ? dependencyName.name : null;
-            return new NamedDependency(name, field.FieldType);
+            Type fieldType = field.FieldType;
+            return new NamedDependency(name, fieldType);
         }
 
         private Type GetContainedType(Type type) {
@@ -280,38 +369,42 @@ namespace Syrup.Framework {
 
             NamedDependency dependencyToBuild = namedDependency;
             bool isLazy = IsLazyWrapped(namedDependency.type);
-            if (isLazy) {                
-                Type containedType = GetContainedType(namedDependency.type);                
+            if (isLazy) {
+                Type containedType = GetContainedType(namedDependency.type);
                 dependencyToBuild = new NamedDependency(namedDependency.name, containedType);
                 if (verboseLogging) {
-                    Debug.Log(string.Format("Requested lazy instance of type: {0}", dependencyToBuild));
+                    Debug.Log($"Requested lazy instance of type: {dependencyToBuild}");
                 }
             }
-            
 
-            if (!dependencySources.ContainsKey(dependencyToBuild)) {
-                throw new MissingDependencyException(string.Format("'{0}' is not a provided dependency!", dependencyToBuild));
+
+            if (!dependencySources.TryGetValue(dependencyToBuild, out DependencyInfo dependencyInfo)) {
+                throw new MissingDependencyException(
+                    $"'{dependencyToBuild}' is not a provided dependency!");
             }
 
-            DependencyInfo dependencyInfo = dependencySources[dependencyToBuild];
-            if (dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(dependencyToBuild)) {
+            if (dependencyInfo.IsSingleton &&
+                fulfilledDependencies.TryGetValue(dependencyToBuild, out object buildDependency)) {
                 if (verboseLogging) {
-                    Debug.Log(string.Format("Provide singleton: {0}", dependencyToBuild.ToString()));
+                    Debug.Log($"Provide singleton: {dependencyToBuild}");
                 }
-                return fulfilledDependencies[dependencyToBuild];
+                return buildDependency;
             }
+
             // Let's also check the Lazy version for this dependency.
             // Lazy containers should be singletons if the underlying type is a singleton
             // (Note: we pass in the original namedDependency param since it's already Lazy!)
-            if (isLazy && dependencyInfo.IsSingleton && fulfilledDependencies.ContainsKey(namedDependency)) {
+            if (isLazy && dependencyInfo.IsSingleton &&
+                fulfilledDependencies.TryGetValue(namedDependency, out object dependency1)) {
                 if (verboseLogging) {
-                    Debug.Log(string.Format("Provide lazy singleton: {0}", namedDependency.ToString()));
+                    Debug.Log($"Provide lazy singleton: {namedDependency}");
                 }
-                return fulfilledDependencies[namedDependency];
+
+                return dependency1;
             }
 
             if (verboseLogging) {
-                Debug.Log(string.Format("Constructing object: {0}", dependencyToBuild.ToString()));
+                Debug.Log($"Constructing object: {dependencyToBuild}");
             }
 
             // We don't want to build the graph for lazy dependencies during the injection
@@ -330,18 +423,44 @@ namespace Syrup.Framework {
             }
 
             object dependency;
-            if (dependencyInfo.DependencySource == DependencySource.PROVIDER) {
-                MethodInfo method = dependencyInfo.ProviderMethod;
-                object[] parameters = GetMethodParameters(method);
-                dependency = method.Invoke(dependencyInfo.ReferenceObject, parameters);
-            } else if (dependencyInfo.DependencySource == DependencySource.CONSTRUCTOR) {
-                ConstructorInfo constructor = dependencyInfo.Constructor;
-                object[] parameters = GetConstructorParameters(constructor);
-                dependency = constructor.Invoke(parameters);
-                InjectObject(dependency, dependencyInfo.InjectableFields, dependencyInfo.InjectableMethods);
-            } else {
-                throw new UnknownDependencySourceException(
-                    string.Format("Unknown DependencySource: '{0}', cannot fulfill dependency!", dependencyInfo.DependencySource));
+            switch (dependencyInfo.DependencySource) {
+                case DependencySource.PROVIDER: {
+                    MethodInfo method = dependencyInfo.ProviderMethod;
+                    object[] parameters = GetMethodParameters(method);
+                    dependency = method.Invoke(dependencyInfo.ReferenceObject, parameters);
+                    break;
+                }
+                case DependencySource.CONSTRUCTOR: {
+                    ConstructorInfo constructor = dependencyInfo.Constructor;
+                    object[] parameters = GetConstructorParameters(constructor);
+                    dependency = constructor.Invoke(parameters);
+                    InjectObject(dependency, dependencyInfo.InjectableFields,
+                        dependencyInfo.InjectableMethods);
+                    break;
+                }
+                case DependencySource.DECLARATIVE when dependencyInfo.Instance != null:
+                    dependency = dependencyInfo.Instance;
+                    break;
+                case DependencySource.DECLARATIVE when dependencyInfo.ImplementationType != null: {
+                    ConstructorInfo constructorToUse = dependencyInfo.Constructor;
+                    if (constructorToUse == null) {
+                        throw new NoSuitableConstructorFoundException(
+                            $"Cannot create instance of '{dependencyInfo.ImplementationType.FullName}' for declarative binding '{dependencyToBuild}'. No suitable constructor found or specified during registration.");
+                    }
+
+                    object[] parameters = GetConstructorParameters(constructorToUse);
+                    dependency = constructorToUse.Invoke(parameters);
+
+                    InjectObject(dependency, dependencyInfo.InjectableFields,
+                        dependencyInfo.InjectableMethods);
+                    break;
+                }
+                case DependencySource.DECLARATIVE:
+                    throw new InvalidOperationException(
+                        $"Invalid declarative binding for '{dependencyToBuild}'. No instance or implementation type.");
+                default:
+                    throw new UnknownDependencySourceException(
+                        $"Unknown DependencySource: '{dependencyInfo.DependencySource}', cannot fulfill dependency!");
             }
 
             if (dependencyInfo.IsSingleton) {
@@ -377,58 +496,99 @@ namespace Syrup.Framework {
         /// be provided by the module, so we need to validate if they should fail graph validation or not
         /// </summary>
         private bool IsMeaningfulDependency(NamedDependency namedDependency) {
-            if (dependencySources[namedDependency].DependencySource == DependencySource.PROVIDER) {
-                //Providers are always meaningful in the context of a module
-                return true;
-            } else { //must be constructor injection or other
-                if (!paramOfDependencies.ContainsKey(namedDependency)) {
-                    //Nothing depends on this dependency, so its not meaningful
-                    return false;
-                }
-
-                //If this dependencies has other dependencies that need it then check if those are meaningful
-                //If one of them is, then this is also a meaningful dependency.
-                foreach (NamedDependency param in paramOfDependencies[namedDependency]) {
-                    if (IsMeaningfulDependency(param)) {
-                        return true;
-                    }
-                }
+            if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo source)) {
                 return false;
             }
+
+            DependencySource dependencySource = source.DependencySource;
+            return dependencySource switch {
+                DependencySource.PROVIDER or DependencySource.DECLARATIVE => true,
+                DependencySource.CONSTRUCTOR => paramOfDependencies.TryGetValue(namedDependency,
+                    out HashSet<NamedDependency> dependency) && dependency.Any(dep => IsMeaningfulDependency(dep)),
+                _ => false
+            };
         }
 
         private string ConstructMissingDependencyStringForType(NamedDependency namedDependency) {
-            DependencyInfo dependencyInfo = dependencySources[namedDependency];
-            List<NamedDependency> parameters;
-            if (dependencyInfo.DependencySource == DependencySource.PROVIDER) {
-                parameters = dependencyInfo.ProviderMethod.GetParameters()
-                    .Select(param => GetNamedDependencyForParam(param))
-                    .ToList();
-            } else {
-                parameters = new();
-                parameters.AddRange(
-                    dependencyInfo.Constructor.GetParameters()
+            if (!dependencySources.TryGetValue(namedDependency, out DependencyInfo dependencyInfo)) {
+                return $"'{namedDependency}' is not a known dependency.\n";
+            }
+
+            List<NamedDependency> parameters = new List<NamedDependency>();
+
+            switch (dependencyInfo.DependencySource) {
+                case DependencySource.PROVIDER:
+                    parameters = dependencyInfo.ProviderMethod.GetParameters()
                         .Select(param => GetNamedDependencyForParam(param))
-                        .ToList());
-                foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
+                        .ToList();
+                    break;
+                case DependencySource.CONSTRUCTOR: {
                     parameters.AddRange(
-                        injectableMethod.GetParameters()
+                        dependencyInfo.Constructor.GetParameters()
                             .Select(param => GetNamedDependencyForParam(param))
                             .ToList());
-                }
+                    if (dependencyInfo.InjectableFields != null) {
+                        parameters.AddRange(
+                            dependencyInfo.InjectableFields.Select(GetNamedDependencyForField));
+                    }
 
+                    if (dependencyInfo.InjectableMethods != null) {
+                        foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
+                            parameters.AddRange(
+                                injectableMethod.GetParameters()
+                                    .Select(param => GetNamedDependencyForParam(param))
+                                    .ToList());
+                        }
+                    }
+
+                    break;
+                }
+                case DependencySource.DECLARATIVE when dependencyInfo.Instance != null:
+                    // No params for instance
+                    break;
+                case DependencySource.DECLARATIVE when dependencyInfo.ImplementationType != null: {
+                    if (dependencyInfo.Constructor != null) {
+                        parameters.AddRange(
+                            dependencyInfo.Constructor.GetParameters()
+                                .Select(param => GetNamedDependencyForParam(param))
+                                .ToList());
+                    }
+
+                    if (dependencyInfo.InjectableFields != null) {
+                        parameters.AddRange(dependencyInfo.InjectableFields.Select(param => GetNamedDependencyForField(param)));
+                    }
+
+                    if (dependencyInfo.InjectableMethods != null) {
+                        foreach (MethodInfo injectableMethod in dependencyInfo.InjectableMethods) {
+                            parameters.AddRange(
+                                injectableMethod.GetParameters()
+                                    .Select(param => GetNamedDependencyForParam(param))
+                                    .ToList());
+                        }
+                    }
+
+                    break;
+                }
+                case DependencySource.DECLARATIVE:
+                    return $"'{namedDependency}' (Declarative) is misconfigured.\n";
+                default:
+                    return
+                        $"'{namedDependency}' has an unknown dependency source '{dependencyInfo.DependencySource}'.\n";
             }
-            List<string> missingParams = new();
+
+            List<string> missingParams = new List<string>();
             foreach (NamedDependency namedParam in parameters) {
-                if (!dependencySources.ContainsKey(namedParam) ||
-                        (indegreesForType.ContainsKey(namedParam) && indegreesForType[namedParam] > 0)) {
+                if (!dependencySources.ContainsKey(namedParam)) {
+                    continue;
+                }
+                if (indegreesForType.ContainsKey(namedParam) && indegreesForType[namedParam] > 0) {
                     missingParams.Add(namedParam.ToString());
                 }
             }
 
-            return string.Format("'{0}' is missing the following dependencies: '{1}'\n",
-                namedDependency,
-                string.Join(',', missingParams));
+            return missingParams.Any()
+                ? $"'{namedDependency}' is missing the following dependencies: '{string.Join(", ", missingParams)}'\n"
+                : "";
         }
 
         /// <summary>
@@ -447,14 +607,14 @@ namespace Syrup.Framework {
         /// <typeparam name="T">The name of the type if explicitly given one with the [Named] attribute</typeparam>
         /// <returns></returns>
         public T GetInstance<T>(string name) {
-            NamedDependency namedDependency = new NamedDependency(name, typeof(T));            
+            NamedDependency namedDependency = new NamedDependency(name, typeof(T));
             object dependency = BuildDependency(namedDependency);
             return (T)dependency;
         }
 
         /// <summary>
         /// Injects dependencies into the provided object by invoking any inject related methods.
-        /// </summary>        
+        /// </summary>
         /// <param name="objectToInject">The object to be injected</param>
         public void Inject<T>(T objectToInject) {
             FieldInfo[] injectableFields = SyrupUtils.GetInjectableFieldsFromType(objectToInject.GetType());
@@ -467,16 +627,16 @@ namespace Syrup.Framework {
             //to deriving class (they should be) but we're assuming it too.
             foreach (FieldInfo injectableField in injectableFields) {
                 if (verboseLogging) {
-                    Debug.Log(string.Format("Injecting (Field) [{0}] into [{1}]", injectableField.FieldType, objectToInject.GetType()));
+                    Debug.Log($"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
                 }
                 injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForFieldInjection(injectableField)));
             }
 
             foreach (MethodInfo injectableMethod in injectableMethods) {
                 object[] parameters = GetMethodParameters(injectableMethod);
-                if (verboseLogging) {                    
+                if (verboseLogging) {
                     string methodParams = string.Join(",", parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
-                    Debug.Log(string.Format("Injecting (Method Params) [{0}] into [{1}]", methodParams, objectToInject.GetType()));
+                    Debug.Log($"Injecting (Method Params) [{methodParams}] into [{objectToInject.GetType()}]");
                 }
                 injectableMethod.Invoke(objectToInject, parameters);
             }
@@ -521,5 +681,49 @@ namespace Syrup.Framework {
                 InjectObject(injectableMb.mb, injectableMb.fields, injectableMb.methods);
             }
         }
+
+        private static ConstructorInfo SelectConstructorForType(Type type, bool enableAutomaticSelection) {
+            if (type.IsAbstract || type.IsInterface || IsStatic(type)) {
+                throw new NoSuitableConstructorFoundException($"Cannot select constructor for type '{type.FullName}'. It is abstract, an interface, or a static class and cannot be instantiated.");
+            }
+
+            ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+            if (!constructors.Any()) {
+                throw new NoSuitableConstructorFoundException($"Cannot select constructor for type '{type.FullName}'. No public constructors found.");
+            }
+
+            List<ConstructorInfo> injectAnnotatedConstructors = constructors
+                .Where(c => c.IsDefined(typeof(Inject), false))
+                .ToList();
+
+            switch (injectAnnotatedConstructors.Count) {
+                case > 1:
+                    throw new NoSuitableConstructorFoundException(
+                        $"Type '{type.FullName}' has multiple constructors annotated with [Inject].");
+                case 1:
+                    return injectAnnotatedConstructors.First();
+            }
+
+            if (!enableAutomaticSelection) {
+                throw new NoSuitableConstructorFoundException(
+                    $"Type '{type.FullName}' has public constructors but none are annotated with [Inject]. " +
+                    "Automatic constructor selection is disabled. Explicitly mark a constructor with [Inject] or enable automatic selection in SyrupComponent options.");
+            }
+
+            if (constructors.Length == 1) {
+                return constructors[0];
+            }
+
+            ConstructorInfo parameterlessConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+            if (parameterlessConstructor != null) {
+                return parameterlessConstructor;
+            }
+
+            throw new NoSuitableConstructorFoundException(
+                $"Type '{type.FullName}' has public constructors but none are annotated with [Inject]. " +
+                "EnableAutomaticConstructorSelection is true, but no single constructor or parameterless constructor was found among multiple options.");
+        }
+
+        private static bool IsStatic(Type type) => type.IsAbstract && type.IsSealed;
     }
 }

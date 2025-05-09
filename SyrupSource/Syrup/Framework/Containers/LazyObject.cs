@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Syrup.Framework;
 
 namespace Syrup.Framework.Containers {

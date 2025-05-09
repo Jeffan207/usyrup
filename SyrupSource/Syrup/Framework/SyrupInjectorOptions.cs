@@ -7,6 +7,7 @@ namespace Syrup.Framework {
     public class SyrupInjectorOptions {
 
         public bool VerboseLogging { get; set; }
+        public bool EnableAutomaticConstructorSelection { get; set; } = false;
 
     }
 }
