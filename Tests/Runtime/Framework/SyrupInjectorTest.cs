@@ -914,14 +914,14 @@ public class SyrupInjectorTest {
         var injector = new SyrupInjector(OPTIONS, module);
 
         // Assert: Instance should not be created just by configuring the injector
-        Assert.IsFalse(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1, 
+        Assert.IsFalse(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1,
             "Instance should NOT be created just by SyrupInjector initialization with the module.");
 
         // Act: Resolve the instance for the first time
         var instance = injector.GetInstance<IDeclarativeService>();
 
         // Assert: Instance should be created now
-        Assert.IsTrue(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1, 
+        Assert.IsTrue(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1,
             "Instance SHOULD be created after GetInstance() is called for the first time.");
         Assert.IsNotNull(instance);
         Assert.IsInstanceOf<DeclarativeServiceImpl1>(instance);
@@ -950,15 +950,27 @@ public class SyrupInjectorTest {
         Assert.IsInstanceOf<DeclarativeServiceImpl1>(instance1);
 
         // Reset flag to ensure constructor is not called again for subsequent requests
-        DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1 = false; 
+        DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1 = false;
 
         // Act: Resolve the instance for the second time
         var instance2 = injector.GetInstance<IDeclarativeService>();
 
         // Assert: Constructor should not have been called again, and it's the same instance
-        Assert.IsFalse(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1, 
+        Assert.IsFalse(DeclarativeServiceImpl1.WasInstantiated_ServiceImpl1,
             "Constructor should NOT be called again for subsequent GetInstance() calls for a singleton.");
         Assert.AreSame(instance1, instance2, "Singleton instances should be the same.");
+    }
+
+    [Test]
+    public void TestDeclarative_Same_Singleton() {
+        var module = new DeclarativeSameSingleton();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        var same1 = injector.GetInstance<ISameSingleton>();
+        var same2 = injector.GetInstance<SameSingleton>();
+
+        Assert.AreEqual(same1.GetHashCode(), same2.GetHashCode(),
+            "Both instances should be the same singleton");
     }
 
     #endregion
