@@ -373,7 +373,7 @@ namespace Syrup.Framework {
                 Type containedType = GetContainedType(namedDependency.type);
                 dependencyToBuild = new NamedDependency(namedDependency.name, containedType);
                 if (verboseLogging) {
-                    Debug.Log($"Requested lazy instance of type: {dependencyToBuild}");
+                    Debug.Log($"Requested lazy instance. Underlying type to resolve: {dependencyToBuild}");
                 }
             }
 
@@ -383,43 +383,66 @@ namespace Syrup.Framework {
                     $"'{dependencyToBuild}' is not a provided dependency!");
             }
 
-            if (dependencyInfo.IsSingleton &&
-                fulfilledDependencies.TryGetValue(dependencyToBuild, out object buildDependency)) {
-                if (verboseLogging) {
-                    Debug.Log($"Provide singleton: {dependencyToBuild}");
-                }
-                return buildDependency;
-            }
+            // Handle Singleton Caching for the underlying type
+            if (dependencyInfo.IsSingleton) {
+                NamedDependency cacheKeyForSingleton = dependencyToBuild;
 
-            // Let's also check the Lazy version for this dependency.
-            // Lazy containers should be singletons if the underlying type is a singleton
-            // (Note: we pass in the original namedDependency param since it's already Lazy!)
-            if (isLazy && dependencyInfo.IsSingleton &&
-                fulfilledDependencies.TryGetValue(namedDependency, out object dependency1)) {
-                if (verboseLogging) {
-                    Debug.Log($"Provide lazy singleton: {namedDependency}");
+                if (dependencyInfo.DependencySource == DependencySource.DECLARATIVE &&
+                    dependencyInfo.ImplementationType != null &&
+                    dependencyInfo.ImplementationType != dependencyToBuild.type) {
+                    cacheKeyForSingleton = new NamedDependency(dependencyToBuild.name, dependencyInfo.ImplementationType);
+                    if (verboseLogging) {
+                        Debug.Log($"Singleton '{dependencyToBuild}' maps to implementation '{cacheKeyForSingleton}'. Using implementation as cache key.");
+                    }
                 }
 
-                return dependency1;
-            }
+                if (fulfilledDependencies.TryGetValue(cacheKeyForSingleton, out object cachedInstance)) {
+                    if (verboseLogging) {
+                        Debug.Log($"Provide singleton instance from cache for key '{cacheKeyForSingleton}', requested as '{dependencyToBuild}'");
+                    }
 
-            if (verboseLogging) {
-                Debug.Log($"Constructing object: {dependencyToBuild}");
+                    if (!isLazy) {
+                        if (!Equals(dependencyToBuild, cacheKeyForSingleton) && !fulfilledDependencies.ContainsKey(dependencyToBuild)) {
+                            fulfilledDependencies.Add(dependencyToBuild, cachedInstance);
+                        }
+                        return cachedInstance;
+                    }
+                    // If isLazyWrapperRequested, fall through to LazyObject creation,
+                    // its .Value access will hit this cache via another BuildDependency call.
+                }
             }
 
             // We don't want to build the graph for lazy dependencies during the injection
             // phase, so for these dependencies we build a lazy container for them and
             // return that container directly.
             if (isLazy) {
+                // Check if the LazyObject WRAPPER itself is cached (if underlying is singleton)
+                if (dependencyInfo.IsSingleton &&
+                    fulfilledDependencies.TryGetValue(namedDependency, out object cachedLazyWrapper)) {
+                    if (verboseLogging) {
+                        Debug.Log($"Provide cached lazy singleton WRAPPER: {namedDependency}");
+                    }
+                    return cachedLazyWrapper;
+                }
+
+                if (verboseLogging) {
+                    Debug.Log($"Constructing NEW LazyObject wrapper for: {namedDependency}, underlying: {dependencyToBuild}");
+                }
                 // Since we cannot just create arbitrary generic types Lazy<T> instances at runtime
                 // we need to use reflection to create them instead.
                 object lazyDependency = Activator.CreateInstance(namedDependency.type, namedDependency.name, this);
 
+                // Cache the new LazyObject wrapper itself
                 if (dependencyInfo.IsSingleton) {
                     fulfilledDependencies.Add(namedDependency, lazyDependency);
                 }
 
                 return lazyDependency;
+            }
+
+            // --- At this point, we are building a NON-LAZY, actual instance for 'dependencyToBuild' ---
+            if (verboseLogging) {
+                Debug.Log($"Constructing actual instance for object: {dependencyToBuild}");
             }
 
             object dependency;
@@ -460,11 +483,30 @@ namespace Syrup.Framework {
                         $"Invalid declarative binding for '{dependencyToBuild}'. No instance or implementation type.");
                 default:
                     throw new UnknownDependencySourceException(
-                        $"Unknown DependencySource: '{dependencyInfo.DependencySource}', cannot fulfill dependency!");
+                        $"Unknown DependencySource: '{dependencyInfo.DependencySource}', cannot fulfill dependency for '{dependencyToBuild}'!");
             }
 
             if (dependencyInfo.IsSingleton) {
-                fulfilledDependencies.Add(dependencyToBuild, dependency);
+                NamedDependency actualCacheKey = dependencyToBuild;
+                if (dependencyInfo.DependencySource == DependencySource.DECLARATIVE &&
+                    dependencyInfo.ImplementationType != null &&
+                    dependencyInfo.ImplementationType != dependencyToBuild.type) {
+                    actualCacheKey = new NamedDependency(dependencyToBuild.name, dependencyInfo.ImplementationType);
+                }
+
+                if (verboseLogging) {
+                    Debug.Log($"Caching singleton instance for key '{actualCacheKey}' (requested as '{dependencyToBuild}')");
+                }
+                if (!fulfilledDependencies.ContainsKey(actualCacheKey)) {
+                    fulfilledDependencies.Add(actualCacheKey, dependency);
+                }
+
+                if (!Equals(dependencyToBuild, actualCacheKey) && !fulfilledDependencies.ContainsKey(dependencyToBuild)) {
+                    if (verboseLogging) {
+                        Debug.Log($"Also caching singleton instance for original request key '{dependencyToBuild}'");
+                    }
+                    fulfilledDependencies.Add(dependencyToBuild, dependency);
+                }
             }
 
             return dependency;
