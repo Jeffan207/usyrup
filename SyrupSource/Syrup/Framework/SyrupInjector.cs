@@ -372,9 +372,7 @@ namespace Syrup.Framework {
             if (isLazy) {
                 Type containedType = GetContainedType(namedDependency.type);
                 dependencyToBuild = new NamedDependency(namedDependency.name, containedType);
-                if (verboseLogging) {
-                    Debug.Log($"Requested lazy instance. Underlying type to resolve: {dependencyToBuild}");
-                }
+                Log($"Requested lazy instance. Underlying type to resolve: {dependencyToBuild}");
             }
 
 
@@ -391,15 +389,11 @@ namespace Syrup.Framework {
                     dependencyInfo.ImplementationType != null &&
                     dependencyInfo.ImplementationType != dependencyToBuild.type) {
                     cacheKeyForSingleton = new NamedDependency(dependencyToBuild.name, dependencyInfo.ImplementationType);
-                    if (verboseLogging) {
-                        Debug.Log($"Singleton '{dependencyToBuild}' maps to implementation '{cacheKeyForSingleton}'. Using implementation as cache key.");
-                    }
+                    Log($"Singleton '{dependencyToBuild}' maps to implementation '{cacheKeyForSingleton}'. Using implementation as cache key.");
                 }
 
                 if (fulfilledDependencies.TryGetValue(cacheKeyForSingleton, out object cachedInstance)) {
-                    if (verboseLogging) {
-                        Debug.Log($"Provide singleton instance from cache for key '{cacheKeyForSingleton}', requested as '{dependencyToBuild}'");
-                    }
+                    Log($"Provide singleton instance from cache for key '{cacheKeyForSingleton}', requested as '{dependencyToBuild}'");
 
                     if (!isLazy) {
                         if (!Equals(dependencyToBuild, cacheKeyForSingleton) && !fulfilledDependencies.ContainsKey(dependencyToBuild)) {
@@ -419,15 +413,11 @@ namespace Syrup.Framework {
                 // Check if the LazyObject WRAPPER itself is cached (if underlying is singleton)
                 if (dependencyInfo.IsSingleton &&
                     fulfilledDependencies.TryGetValue(namedDependency, out object cachedLazyWrapper)) {
-                    if (verboseLogging) {
-                        Debug.Log($"Provide cached lazy singleton WRAPPER: {namedDependency}");
-                    }
+                    Log($"Provide cached lazy singleton WRAPPER: {namedDependency}");
                     return cachedLazyWrapper;
                 }
 
-                if (verboseLogging) {
-                    Debug.Log($"Constructing NEW LazyObject wrapper for: {namedDependency}, underlying: {dependencyToBuild}");
-                }
+                Log($"Constructing NEW LazyObject wrapper for: {namedDependency}, underlying: {dependencyToBuild}");
                 // Since we cannot just create arbitrary generic types Lazy<T> instances at runtime
                 // we need to use reflection to create them instead.
                 object lazyDependency = Activator.CreateInstance(namedDependency.type, namedDependency.name, this);
@@ -441,9 +431,7 @@ namespace Syrup.Framework {
             }
 
             // --- At this point, we are building a NON-LAZY, actual instance for 'dependencyToBuild' ---
-            if (verboseLogging) {
-                Debug.Log($"Constructing actual instance for object: {dependencyToBuild}");
-            }
+            Log($"Constructing actual instance for object: {dependencyToBuild}");
 
             object dependency;
             switch (dependencyInfo.DependencySource) {
@@ -494,17 +482,13 @@ namespace Syrup.Framework {
                     actualCacheKey = new NamedDependency(dependencyToBuild.name, dependencyInfo.ImplementationType);
                 }
 
-                if (verboseLogging) {
-                    Debug.Log($"Caching singleton instance for key '{actualCacheKey}' (requested as '{dependencyToBuild}')");
-                }
+                Log($"Caching singleton instance for key '{actualCacheKey}' (requested as '{dependencyToBuild}')");
                 if (!fulfilledDependencies.ContainsKey(actualCacheKey)) {
                     fulfilledDependencies.Add(actualCacheKey, dependency);
                 }
 
                 if (!Equals(dependencyToBuild, actualCacheKey) && !fulfilledDependencies.ContainsKey(dependencyToBuild)) {
-                    if (verboseLogging) {
-                        Debug.Log($"Also caching singleton instance for original request key '{dependencyToBuild}'");
-                    }
+                    Log($"Also caching singleton instance for original request key '{dependencyToBuild}'");
                     fulfilledDependencies.Add(dependencyToBuild, dependency);
                 }
             }
@@ -668,18 +652,15 @@ namespace Syrup.Framework {
             //We're making the assumption that the injectable fields/methods are ordered from base class
             //to deriving class (they should be) but we're assuming it too.
             foreach (FieldInfo injectableField in injectableFields) {
-                if (verboseLogging) {
-                    Debug.Log($"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
-                }
+                Log($"Injecting (Field) [{injectableField.FieldType}] into [{objectToInject.GetType()}]");
                 injectableField.SetValue(objectToInject, BuildDependency(GetNamedDependencyForFieldInjection(injectableField)));
             }
 
             foreach (MethodInfo injectableMethod in injectableMethods) {
                 object[] parameters = GetMethodParameters(injectableMethod);
-                if (verboseLogging) {
-                    string methodParams = string.Join(",", parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
-                    Debug.Log($"Injecting (Method Params) [{methodParams}] into [{objectToInject.GetType()}]");
-                }
+                string methodParams = string.Join(",", parameters.Select(parameter => parameter.GetType().ToString()).ToArray());
+                Log($"Injecting (Method Params) [{methodParams}] into [{objectToInject.GetType()}]");
+
                 injectableMethod.Invoke(objectToInject, parameters);
             }
         }
@@ -721,6 +702,12 @@ namespace Syrup.Framework {
         private void InjectGameObjects(List<InjectableMonoBehaviour> injectableMonoBehaviours) {
             foreach (InjectableMonoBehaviour injectableMb in injectableMonoBehaviours) {
                 InjectObject(injectableMb.mb, injectableMb.fields, injectableMb.methods);
+            }
+        }
+
+        private void Log(string message) {
+            if (verboseLogging) {
+                Debug.Log(message);
             }
         }
 
