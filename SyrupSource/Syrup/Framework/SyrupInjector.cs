@@ -270,7 +270,7 @@ namespace Syrup.Framework {
 
             while (queue.Count > 0) {
                 NamedDependency namedDependency = queue.Dequeue();
-                if (!paramOfDependencies.TryGetValue(namedDependency, out var dependentTypes)) {
+                if (!paramOfDependencies.TryGetValue(namedDependency, out HashSet<NamedDependency> dependentTypes)) {
                     continue;
                 }
 
