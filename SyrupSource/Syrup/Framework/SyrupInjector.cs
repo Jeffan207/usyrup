@@ -181,6 +181,55 @@ namespace Syrup.Framework {
                      dependencySources[namedDeclBinding] = dependencyInfo;
                      AddDependenciesForParam(namedDeclBinding, uniqueParameters.ToList());
                 }
+
+                // Update IsSingleton for .To<Implementation>() bindings.
+                bool changedInSingletonPropagationPass;
+                do {
+                    changedInSingletonPropagationPass = false;
+                    Log($"--- Starting new singleton propagation pass for module {module.GetType().Name} ---");
+
+                    Dictionary<NamedDependency, DependencyInfo> copy = dependencySources
+                        .Where(pair => !pair.Value.IsSingleton)
+                        .Where(pair => pair.Value.DependencySource == DependencySource.DECLARATIVE)
+                        .Where(pair => pair.Value.Instance == null)
+                        .Where(pair => pair.Value.ImplementationType != null)
+                        .ToDictionary(pair => pair.Key, pair => pair.Value);
+                    foreach (KeyValuePair<NamedDependency, DependencyInfo> keyValue in copy) {
+                        NamedDependency key = keyValue.Key;
+                        DependencyInfo dependency = keyValue.Value;
+                        Log(
+                            $"Propagation Check (Module: {module.GetType().Name}): Key: {key}, " +
+                            $"Current IsSingleton: {dependency.IsSingleton}, ImplType: {dependency.ImplementationType?.FullName}");
+
+                        if (dependency.IsSingleton) {
+                            continue;
+                        }
+
+                        NamedDependency implementationKey = new NamedDependency(null, dependency.ImplementationType);
+                        bool implementationFound = dependencySources.TryGetValue(implementationKey, out DependencyInfo implementationDependency);
+                        Log(
+                            $"Attempting to find underlying implementation binding: {implementationKey} (for {key})");
+
+                        if (implementationFound && implementationDependency.IsSingleton) {
+                            Log(
+                                $"Implementation {implementationKey} is a registered singleton. " +
+                                $"Promoting {key} to singleton.");
+
+                            dependency.IsSingleton = true;
+                            dependencySources[key] = dependency; // Write the modified copy back
+                            changedInSingletonPropagationPass = true;
+                        } else {
+                            string singletonStatus = implementationFound ? implementationDependency.IsSingleton.ToString() : "N/A";
+                            Log(
+                                $"Underlying implementation {implementationKey} for {key} " +
+                                $"is not a registered singleton (Found: {implementationFound}, " +
+                                $"IsSingleton if found: {singletonStatus}). {key} will not be promoted this pass.");
+                        }
+                    }
+
+                    Log(
+                        $"--- End of propagation pass for module {module.GetType().Name}. Changed this pass: {changedInSingletonPropagationPass} ---");
+                } while (changedInSingletonPropagationPass);
                 // --- End: Processing declarative bindings for the current module ---
             }
 
