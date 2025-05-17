@@ -207,13 +207,10 @@ namespace Syrup.Framework {
 
                         NamedDependency implementationKey = new NamedDependency(null, dependency.ImplementationType);
                         bool implementationFound = dependencySources.TryGetValue(implementationKey, out DependencyInfo implementationDependency);
-                        Log(
-                            $"Attempting to find underlying implementation binding: {implementationKey} (for {key})");
+                        Log($"Attempting to find underlying implementation binding: {implementationKey} (for {key})");
 
                         if (implementationFound && implementationDependency.IsSingleton) {
-                            Log(
-                                $"Implementation {implementationKey} is a registered singleton. " +
-                                $"Promoting {key} to singleton.");
+                            Log($"Implementation {implementationKey} is a registered singleton. Promoting {key} to singleton.");
 
                             dependency.IsSingleton = true;
                             dependencySources[key] = dependency; // Write the modified copy back
