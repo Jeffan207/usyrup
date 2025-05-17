@@ -973,5 +973,23 @@ public class SyrupInjectorTest {
             "Both instances should be the same singleton");
     }
 
+    [Test]
+    public void TestDeclarative_Implicit_Singleton() {
+        var module = new DeclarativeImplicitSingleton();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        var sameImplicit1 = injector.GetInstance<ISameSingleton>();
+        var sameImplicit2 = injector.GetInstance<ISameSingleton>();
+        var sameImplementation1 = injector.GetInstance<SameSingleton>();
+        var sameImplementation2 = injector.GetInstance<SameSingleton>();
+
+        Assert.AreEqual(sameImplicit1.GetHashCode(), sameImplicit2.GetHashCode(),
+            "Creating the same implicit singleton twice should return the same instance.");
+        Assert.AreEqual(sameImplementation1.GetHashCode(), sameImplementation2.GetHashCode(),
+            "Creating the same implementation singleton twice should return the same instance.");
+        Assert.AreEqual(sameImplicit1.GetHashCode(), sameImplementation1.GetHashCode(),
+            "Creating the same implicit and implementation singleton twice should return the same instance.");
+    }
+
     #endregion
 }
