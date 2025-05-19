@@ -13,11 +13,19 @@ namespace Syrup.Framework.Model {
 
         //The fields that will be used for field injection on the mb
         public readonly FieldInfo[] fields;
+        
+        //The properties that will be used for property injection on the mb
+        public readonly PropertyInfo[] properties;
 
-        public InjectableMonoBehaviour(MonoBehaviour mb, MethodInfo[] methods, FieldInfo[] fields) {
+        public InjectableMonoBehaviour(
+            MonoBehaviour mb, 
+            MethodInfo[] methods,
+            FieldInfo[] fields,
+            PropertyInfo[] properties) {
             this.mb = mb;
             this.methods = methods;
             this.fields = fields;
+            this.properties = properties;
         }
     }
 }

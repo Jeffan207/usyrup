@@ -8,6 +8,8 @@ using Syrup.Framework.Exceptions;
 using Tests.Framework.TestData;
 using Tests.Framework.TestModules;
 using Tests.Framework.TestData.Declarative;
+using Tests.Framework.TestData.PropertyInjection;
+using Tests.Framework.TestModules.PropertyInjection;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -991,5 +993,163 @@ public class SyrupInjectorTest {
             "Creating the same implicit and implementation singleton twice should return the same instance.");
     }
 
+    [Test]
+    public void TestPropertyInjection_Simple() {
+        var module = new SingleProviderModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        SimpleProperty simpleProperty = new();
+        Assert.Null(simpleProperty.SyrupProperty);
+        injector.Inject(simpleProperty);
+        Assert.IsNotNull(simpleProperty.SyrupProperty);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_SimplePrivateProperty() {
+        var module = new SingleProviderModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        SimplePrivateProperty simplePrivateProperty = new();
+        Assert.Null(simplePrivateProperty.GetSyrup());
+        injector.Inject(simplePrivateProperty);
+        Assert.IsNotNull(simplePrivateProperty.GetSyrup());
+    }
+    
+    [Test]
+    public void TestPropertyInjection_SimplePrivateSet() {
+        var module = new SingleProviderModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        SimplePropertyPrivateSet simplePropertyPrivateSet = new();
+        Assert.Null(simplePropertyPrivateSet.SyrupProperty);
+        injector.Inject(simplePropertyPrivateSet);
+        Assert.IsNotNull(simplePropertyPrivateSet.SyrupProperty);
+    }
+
+    [Test]
+    public void TestPropertyInjection_CustomSet_SeparateBackingType() {
+        var module = new PropertyIntModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        SimplePropertySetValidation simplePropertySetValidation = new();
+        injector.Inject(simplePropertySetValidation);
+        
+        Assert.AreEqual(50, simplePropertySetValidation.PropNum);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_CustomSet_FailsValidation() {
+        var module = new PropertyLargeIntModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        Assert.Throws<BadInjectException>(() => {
+            SimplePropertySetValidation simplePropertySetValidation = new();
+            injector.Inject(simplePropertySetValidation);
+        });
+    }
+    
+    [Test]
+    public void TestPropertyInjection_CustomSet_FromProviderType() {
+        var module = new PropertyProviderIntModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+
+        SimplePropertySetValidation simplePropertySetValidation = new();
+        injector.Inject(simplePropertySetValidation);
+        
+        Assert.AreEqual(75, simplePropertySetValidation.PropNum);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_CustomSet_FromConstructorType() {
+        var injector = new SyrupInjector(OPTIONS);
+
+        // Somewhat redundant test, but validates that a simple constructor
+        // injected type can be injected into a property.
+        PropertyFromConstructorInjectedType constructorProp = new();
+        Assert.Null(constructorProp.SimpleClass);
+        injector.Inject(constructorProp);
+        Assert.IsNotNull(constructorProp.SimpleClass);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_IntoType_FromConstructorInjection() {
+        var injector = new SyrupInjector(OPTIONS);
+
+        PropertyObject propertyObject1 =  injector.GetInstance<PropertyObject>();
+        PropertyObject propertyObject2 =  injector.GetInstance<PropertyObject>();
+        Assert.NotNull(propertyObject1.SimpleClass);
+        Assert.NotNull(propertyObject2.SimpleClass);
+        Assert.AreNotSame(propertyObject1.SimpleClass.id, propertyObject2.SimpleClass.id);
+    }
+
+    [Test]
+    public void TestPropertyInjection_IntoType_FromDeclarativeBinding() {
+        var module = new PropertyModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        PropertyObjectNoConstructor propertyObject1 =  injector.GetInstance<PropertyObjectNoConstructor>();
+        PropertyObjectNoConstructor propertyObject2 =  injector.GetInstance<PropertyObjectNoConstructor>();
+        Assert.NotNull(propertyObject1.SimpleClass);
+        Assert.NotNull(propertyObject2.SimpleClass);
+        Assert.AreNotSame(propertyObject1.SimpleClass.id, propertyObject2.SimpleClass.id);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_InheritedAndChildProperties_AreInjected() {
+        var module = new PropertyModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        SimpleInheritedProperty simpleInheritedProperty =  injector.GetInstance<SimpleInheritedProperty>();
+        Assert.NotNull(simpleInheritedProperty.SimpleClass);
+        Assert.NotNull(simpleInheritedProperty.SyrupProperty);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_FromSuperType_ToConcreteType_ViaDeclarativeBinding() {
+        var module = new AbstractPropertyModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        SimpleInheritedProperty simpleInheritedProperty =  injector.GetInstance<SimpleInheritedProperty>();
+        Assert.NotNull(simpleInheritedProperty.SimpleClass);
+        Assert.NotNull(simpleInheritedProperty.SyrupProperty);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_ForLazyProperty() {
+        var module = new PropertyModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        LazyProperty lazyProperty =  injector.GetInstance<LazyProperty>();
+        Assert.NotNull(lazyProperty.LazySimpleClass.Get());
+    }
+    
+    [Test]
+    public void TestPropertyInjection_ForNamedProperty() {
+        var module = new PropertyModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        NamedProperty namedProperty =  injector.GetInstance<NamedProperty>();
+        Assert.NotNull(namedProperty.SyrupProperty);
+    }
+    
+    [Test]
+    public void TestPropertyInjection_ForMissingNamedProperty_ThrowsException() {
+        Assert.Throws<MissingDependencyException>(() =>
+            new SyrupInjector(OPTIONS, new MissingNamedPropertyModule()));
+    }
+    
+    
+    [Test]
+    public void TestPropertyInjection_ForProperty_WhereInjectedTypeIsSingleton() {
+        var module = new SingletonPropertyModule();
+        var injector = new SyrupInjector(OPTIONS, module);
+        
+        SimpleProperty simpleProperty1 =  injector.GetInstance<SimpleProperty>();
+        SimpleProperty simpleProperty2 =  injector.GetInstance<SimpleProperty>();
+        Assert.NotNull(simpleProperty1.SyrupProperty);
+        Assert.NotNull(simpleProperty2.SyrupProperty);
+        Assert.AreEqual(simpleProperty1.SyrupProperty.id, simpleProperty2.SyrupProperty.id);
+    }
+    
     #endregion
 }
