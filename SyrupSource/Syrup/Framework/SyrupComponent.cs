@@ -37,7 +37,8 @@ namespace Syrup.Framework {
         [SerializeField]
         [Tooltip("If enabled, the injector will automatically select a public constructor if it's the only one, " +
                  "or a parameterless public constructor if multiple exist and none are marked with [Inject]. " +
-                 "By default, an [Inject] attribute is required if any public constructors are present.")]
+                 "By default, an [Inject] attribute is required if any public constructors are present. " +
+                 "This feature is currently only available for declarative bound injections.")]
         private bool enableAutomaticConstructorSelection = false;
 
         private void Awake() {

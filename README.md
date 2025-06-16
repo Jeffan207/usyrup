@@ -24,11 +24,14 @@ USyrup is a dependency injection framework designed for the Unity Game Engine. I
     - [Named (Attribute))](#named-attribute)
     - [Inject (Attribute)](#inject-attribute)
         - [Constructor Injection](#constructor-injection)
-        - [Field and Method Injection](#field-and-method-injection)
+        - [Field, Property, and Method Injection](#field-property-and-method-injection)
             - [Injecting MonoBehaviours](#injecting-monobehaviours)
+            - [Property Validation](#property-validation)
             - [Constructor Injection Post-Step](#constructor-injection-post-step)
             - [Injection Heirarchies](#injection-heirarchies)
     - [Singleton (Attribute)](#singleton-attribute)
+    - [Declarative Bindings](#declarative-bindings)
+        - [Declarative Semantics](#declarative-semantics)
     - [SceneInjection (Attribute)](#sceneinjection-attribute)
     - [Containers](#containers)
         - [LazyObject Containers](#lazyobject-containers)
@@ -391,6 +394,82 @@ public class Butter {
 
 The above example shows both uses of the `[Singleton]` attribute. On the provider, only a single `TastySyrup` will only be created from that provider method and will be re-used across the dependencies that require it. On the `Butter` class we annotate the class itself with the `[Singleton]` attribute to denote that this class should only ever be constructor injected once.
 
+## Declarative Bindings
+
+In addition to hosting `Provides` annotated methods, Syrup Modules can also declare injectable objects via declarative bindings in a module's `configure()` method. These bindings provide convenient shorthand for declaring injections without using the much wordier `Provides` method alternative.
+
+```c#
+public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+    public void Configure(IBinder binder) {
+        binder.Bind<Pancake>().To<BlueberryPancake>();
+    }
+}
+```
+
+A good use for declarative bindings is binding abstract types to concrete types. In the above example, `Pancake` is bound to `BlueberryPancake`, so any injections asking for a `Pancake` will receive a `BlueberryPancake` instance! This is also technically possible with `Provides` methods, but there are some drawbacks.
+
+```c#
+public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+    [Provides]
+    public Pancake ProvidesPancake(Blueberry blueberry, TastySyrup tastySyrup) {
+        return new BlueberryPancake(blueberry, tastySyrup);
+    }
+}
+```
+
+Above, we declare a `Provides` method that returns a concrete `BlueberryPancake` type. This works, but notice that the `Blueberry` and `TastySyrup` objects need to be supplied as arguments to the `Provides` method directly. I.E., we forgo the ability to inject members of `BlueberryPancake` and need to construct it directly. In real world Unity usages, most injectable objects are going to be `MonoBehaviour`s where direct construction is not possible, so declarative bindings allow us to map abstract to concrete types while still enabling injection of those concrete types.
+
+**Note:** declarative bound dependencies still need to be provided somewhere as an injectable object, either via an `Inject` annotated constructor or a `Provides` annotated method. 
+
+### Declarative Semantics
+
+Declarative bindings have all the same semantics that `Provides` methods and `[Inject]` annotated constructors have such as being able to mark those dependencies as `Singleton` and `Named`.
+
+```c#
+public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+    public void Configure(IBinder binder) {
+        binder.Bind<Pancake>().To<BlueberryPancake>().Named("FunPancakes").AsSingleton();
+    }
+}
+```
+
+Like `Provides` methods, you can also give the binding an already created instance that's passed directly into your module. 
+
+```c#
+public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+    
+    [SerializeField]
+    private Pancake pancake;
+    
+    public void Configure(IBinder binder) {
+        binder.Bind<Pancake>().toInstance(pancake)
+    }
+}
+```
+
+In this case you wouldn't need to bind `Pancake` to a concrete subtype as it already has an object provided.
+
+Declarative bindings are flexible, and the same binding can be expressed in many ways.
+
+```c#
+public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+    
+    public void Configure(IBinder binder) {
+        // Self binds the BlueberryPancake type, useful if BlueberryPancake doesn't declare an `[Inject]` 
+        // annotated constructor and you have enableAutomaticConstructorSelection set to `true`.
+        binder.Bind<BlueberryPancake>()
+            
+        // You can also use normal semantics with self-binds, like AsSingleton() and Named().
+        bind.Bind<BlueberryPancake>().AsSingleton()
+            
+        // Another way to write binder.Bind<Pancake>().to<BlueberryPancake>()
+        binder.Bind<Pancake, BlueberryPancake>()
+    }
+}
+```
+
+**Note:** `enableAutomaticConstructorSelection` is a useful Syrup Component flag that you can set that will automatically pick any parameterless or default/no-arg constructor declared in an object, even if they aren't annotated with `[Inject]` (barring that there is only one such constructor). This flag is only available for declarative bindings!
+
 ## SceneInjection (Attribute)
 
 The `[SceneInjection]` attributes controls whether the object will be injected when the scene is loaded. By default, all MonoBehaviours are treated as if `SceneInjection.enabled` is set to `true`, even if the `[SceneInjection]` attribute isn't declared on the MonoBehaviour itself. When the `[SceneInjection]` attribute is provided with the enabled field set to `false`, then USyrup will skip injecting the MonoBehaviour when the scene is loaded. So outside of being more explicit, the only time you would want to use this attribute is if you wanted to conditionally disable scene injection. You would generally do this for objects that are created at runtime or if you want to rely on on-demand style injection instead.
@@ -481,12 +560,14 @@ The Syrup Component is a MonoBehaviour that sits in your scene(s) and holds your
 
 The Syrup Component itself has the following tunable parameters:
 
-| Parameter   | Required    | Type | Description
-| ----------- | ----------- | ----------- | --|
-| Scenes To Inject     | False   | `List<String>`  | A list of scenes that this Syrup Component is responsible for injecting. If not set, all game objects in all loaded scenes will be injected. Set this if you plan to load your scenes additively so you don't double inject your existing objects. |
-| Use Scene Injection  | True   | `bool`  | Flag that indicates whether or not the Syrup Component should inject objects when the scene loads. By default this is set to true. This flag is useful if you don't want to use scene injection at all and don't want to add the `[SceneInjection(enabled: false)]` attribute to every object |
-| Verbose Logging  | True   | `bool`  | Flag that controls how verbose the console logging by should be for the Syrup Component and the Syrup Injector created by the component. By default this is set to false. |
-| Inject in Awake  | True   | `bool`  | Flag that controls whether or not to run scene injection during the `Awake()` step instead of `Start()`. Default: `false`. |
+| Parameter                              | Type           | Description                                                                                                                                                                                                                                                                    |
+|----------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Scenes To Inject                       | `List<String>` | A list of scenes that this Syrup Component is responsible for injecting. If not set, all game objects in all loaded scenes will be injected. Set this if you plan to load your scenes additively so you don't double inject your existing objects.                             |
+| Use Scene Injection                    | `bool`         | Flag that indicates whether or not the Syrup Component should inject objects when the scene loads. Default: `true`. This flag is useful if you don't want to use scene injection at all and don't want to add the `[SceneInjection(enabled: false)]` attribute to every object |
+| Verbose Logging                        | `bool`         | Flag that controls how verbose the console logging by should be for the Syrup Component and the Syrup Injector created by the component. Default: `false`                                                                                                                      |
+| Inject in Awake                        | `bool`         | Flag that controls whether or not to run scene injection during the `Awake()` step instead of `Start()`. Default: `false`.                                                                                                                                                     |
+| Enable Automatic Constructor Selection | `bool`         | Flag that controls whether or not declarative bindings can automatically select an empty/parameterless constructor if it exists. Default: `false`.                                                                                                                             |
+
 
 ## Syrup Injector
 
