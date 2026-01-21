@@ -9,7 +9,7 @@
 }}}
 \par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Introduction\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 USyrup is a dependency injection framework designed for the Unity Game Engine. It\u8217's heavily inspired by Java\u8217's Guice/Dagger DI frameworks, co-opting similar such semantics from those libraries. The core problem that USyrup attempts to address is simplicity. Many dependency injection frameworks that currently exist are both incredibly feature rich and even more so complicated. USyrup\u8217's simplicity makes DI much more approachable and actually benefit a project instead of creating dependency confusion.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 USyrup is a dependency injection framework designed for the Unity Game Engine. It\u8217's heavily inspired by Java\u8217's Guice/Dagger DI frameworks, co-opting similar such semantics from those libraries. The core problem that USyrup attempts to address is simplicity. Many dependency injection frameworks that currently exist are both incredibly feature rich and even more so complicated. USyrup\u8217's simplicity makes DI much more approachable and actually benefits a project instead of creating dependency confusion.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Table of Contents\par}
 {
 \trowd \trgaph120
@@ -54,11 +54,14 @@ Inject (Attribute)
  - {\field{\*\fldinst{HYPERLINK "#constructor-injection"}}{\fldrslt{\ul
 Constructor Injection
 }}}
- - {\field{\*\fldinst{HYPERLINK "#field-and-method-injection"}}{\fldrslt{\ul
-Field and Method Injection
+ - {\field{\*\fldinst{HYPERLINK "#field-property-and-method-injection"}}{\fldrslt{\ul
+Field, Property, and Method Injection
 }}}
  - {\field{\*\fldinst{HYPERLINK "#injecting-monobehaviours"}}{\fldrslt{\ul
 Injecting MonoBehaviours
+}}}
+ - {\field{\*\fldinst{HYPERLINK "#property-validation"}}{\fldrslt{\ul
+Property Validation
 }}}
  - {\field{\*\fldinst{HYPERLINK "#constructor-injection-post-step"}}{\fldrslt{\ul
 Constructor Injection Post-Step
@@ -68,6 +71,12 @@ Injection Heirarchies
 }}}
  - {\field{\*\fldinst{HYPERLINK "#singleton-attribute"}}{\fldrslt{\ul
 Singleton (Attribute)
+}}}
+ - {\field{\*\fldinst{HYPERLINK "#declarative-bindings"}}{\fldrslt{\ul
+Declarative Bindings
+}}}
+ - {\field{\*\fldinst{HYPERLINK "#declarative-semantics"}}{\fldrslt{\ul
+Declarative Semantics
 }}}
  - {\field{\*\fldinst{HYPERLINK "#sceneinjection-attribute"}}{\fldrslt{\ul
 SceneInjection (Attribute)
@@ -93,9 +102,6 @@ On-Demand Injection
  - {\field{\*\fldinst{HYPERLINK "#caveats"}}{\fldrslt{\ul
 Caveats
 }}}
- - {\field{\*\fldinst{HYPERLINK "#where-is-field-injection"}}{\fldrslt{\ul
-Where is Field Injection?
-}}}
  - {\field{\*\fldinst{HYPERLINK "#where-is-x-dependency-injection-framework-feature"}}{\fldrslt{\ul
 Where is \u8216'X\u8217' dependency injection framework feature?
 }}}
@@ -111,8 +117,8 @@ Development Documentation
 \intbl\row}
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 How It Works\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 USyrup is a runtime dependency injection framework, much like Guice. It uses modules (called \u8220"Syrup Modules\u8221") for explicitly provided dependencies and constructor injection for the rest. MonoBehaviours can be injected like any other object through the use of method and field injection, an approach similar to how Zenject handles injection.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Custom Syrup Modules are written and attached to a game object alongside a USyrup provided Syrup Component, which reads in the modules and uses them to construct your dependency graph. The graph is then validated to ensure all provided dependencies can be fulfilled and then injects the dependencies into each injectable MonoBehaviour in the scene.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 USyrup is a runtime dependency injection framework, much like Guice. It uses modules (called \u8220"Syrup Modules\u8221") for explicitly provided dependencies and constructor injection for the rest. MonoBehaviours can be injected like any other object through the use of members injection (for fields, properties, and methods), an approach similar to how Zenject handles injection.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Custom Syrup Modules are written and attached to a game object with the USyrup provided Syrup Component, which reads in the modules and uses them to construct your dependency graph. The graph is then validated to ensure all provided dependencies can be fulfilled and then injects the dependencies into each injectable MonoBehaviour in the scene.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Installation\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab Install through {\field{\*\fldinst{HYPERLINK "https://openupm.com/packages/com.cannone.usyrup/#close"}}{\fldrslt{\ul
 OpenUPM
@@ -129,7 +135,7 @@ Unity Asset Store
 }}}
 \sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Quick Start Guide\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab In your MonoBehaviour where you want your dependencies injected, create a new {\f1 void} method and annotate it with the {\f1 [Inject]} attribute. The parameters for the method will be the dependencies that USyrup will inject into the MonoBehaviour. An example such MonoBehaviour is shown below.\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab In your MonoBehaviour where you want your dependencies injected, create a new {\f1 void} method and annotate it with the {\f1 [Inject]} attribute. The parameters for the method will be the dependencies that USyrup will inject into the MonoBehaviour. An example of such MonoBehaviour is shown below.\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class Breakfast : MonoBehaviour \{\line
 \line
     private Pancakes pancakes;\line
@@ -141,7 +147,7 @@ Unity Asset Store
         this.pancakes = pancakes;\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab Create a new module for your scene to house your dependencies. The module must extend the {\f1 ISyrupModule} interface and be a {\f1 MonoBehaviour}. You can use the example below as a template of how a basic module might look like.\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab Create a new module for your scene to house your dependencies. The module must extend the {\f1 ISyrupModule} interface and be a {\f1 MonoBehaviour}. You can use the example below as a template of how a basic module might look.\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     [Provides]\line
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) \{\line
@@ -158,14 +164,14 @@ Unity Asset Store
 {\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab Hit play! Your dependencies should be automatically injected when the scene starts!\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Features\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Modules (Syrup Modules)\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Syrup Modules are the backbone of USyrup. In these modules you can declare dependencies you wish you explicitly expose to your Syrup Component. USyrup will proiritize providing any dependencies declared here over any dependencies that might be provided via other means (like constructor injection). These modules should be attached to the same game object in your scene that contains a Syrup Component MonoBehaviour.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Syrup Modules are the backbone of USyrup. In these modules, you can declare dependencies you wish you explicitly expose to your Syrup Component. USyrup will prioritize providing any dependencies declared here over any dependencies that might be provided via other means (like constructor injection). These modules should be attached to the same game object in your scene that contains a Syrup Component MonoBehaviour.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Modules are simple MonoBehaviours that implement the {\f1 ISyrupModule} interface (and empty interface).\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     //This is technically a valid module!\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 A Syrup Component can take in any number of modules and modules themselves can provide dependencies to other modules, so feel free to break your modules up if they grow too big.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Provides (Attribute)\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The \u8220"Provides\u8221" attribute is used within Syrup Modules. Any public method inside a SyrupModule that is annoted with {\f1 [Provides]} indicates that the method is to be used to supply dependencies. The type of the dependency provided is determined by return type of the method. These methods are also known as \u8220"Provider\u8221" methods. A provider method can also provide dependencies to other provider methods, creating a heirarchy of dependencies. Neat!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The \u8220"Provides\u8221" attribute is used within Syrup Modules. Any public method inside a SyrupModule that is annotated with {\f1 [Provides]} indicates that the method is to be used to supply dependencies. The type of the dependency provided is determined by return type of the method. These methods are also known as \u8220"Provider\u8221" methods. A provider method can also provide dependencies to other provider methods, creating a hierarchy of dependencies. Neat!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     \line
     [Provides]\line
@@ -182,7 +188,7 @@ Unity Asset Store
 {\pard \ql \f0 \sa180 \li0 \fi0 Providers that are {\b NOT} also annotated with a {\f1 [Singleton]} attribute will supply a new instance of the dependency everytime that dependency is needed. For example, if the {\f1 Breakfast} dependency is needed three separate times, three unique {\f1 Omelette} objects will be instantiated to supply three unique {\f1 Breakfast} objects.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Named (Attribute)\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Sometimes it\u8217's required to have two provider methods that provide dependencies of the same type. Without doing anything else, this scenario will create an ambiguous injection since the Syrup Injector won\u8217't know which provider it should be using.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 These cases can be worked around by using the {\f1 [Named]} attribute on provider methods, along with any human readable name. Any provider method with this attribute will be disambiguated from other provider methods that have the same return type. In order to use the dependency from this named provider method you must declare any parameters supplied to other providers/injected constructors with the {\f1 [Named]} attribute as well.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 These cases can be worked around by using the {\f1 [Named]} attribute on provider methods, along with any human-readable name. Any provider method with this attribute will be disambiguated from other provider methods that have the same return type. In order to use the dependency from this named provider method, you must declare any parameters supplied to other providers/injected constructors with the {\f1 [Named]} attribute as well.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The following example illustrates this more clearly\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     \line
@@ -208,7 +214,7 @@ Unity Asset Store
         return new EggDish("SunnySideUp");\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Above, both Bob and Alice want an egg {\f1 Breakfast}. Bob wants scrambled eggs and Alice wants sunny-side-up eggs (yuck). Our {\f1 Breakfast} object now takes in an {\f1 EggDish} type which itself takes in a custom string indicating what unique flavor of dish it is. In order to disambiguate which {\f1 EggDish} goes to Bob and which to Alice, we annotate each provider with a {\f1 [Named]} attribute indicating which exact flavor of {\f1 EggDish} the method is providing. In Bob and Alice\u8217's {\f1 Breakfast} providers we annotate the {\f1 EggDish} parameters again with the {\f1 [Named]} attribute to indicate which flavor of eggs they want.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Above, both Bob and Alice want an egg {\f1 Breakfast}. Bob wants scrambled eggs, and Alice wants sunny-side-up eggs (yuck). Our {\f1 Breakfast} object now takes in an {\f1 EggDish} type which itself takes in a custom string indicating what unique flavor of a dish it is. To disambiguate which {\f1 EggDish} goes to Bob and which to Alice, we annotate each provider with a {\f1 [Named]} attribute indicating which exact flavor of {\f1 EggDish} the method is providing. In Bob and Alice\u8217's {\f1 Breakfast} providers we annotate the {\f1 EggDish} parameters again with the {\f1 [Named]} attribute to indicate which flavor of eggs they want.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The {\f1 [Named]} attribute can also be used on injectable field/method/constructor parameters too!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class TastySyrup \{\line
 \line
@@ -242,7 +248,7 @@ public class TastySyrup \{\line
     \}\line
 \line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Above we have a simple example of constructor injection in action. Our {\f1 TastySyrup} contains a single {\f1 [Inject]} annotated constructor which our Syrup Injector will use to build it when it\u8217's needed. Inside our module we have a provider method to make {\f1 Pancakes} (delicious), which requires some {\f1 TastySyrup}. Since we\u8217're using constructor injection, we don\u8217't need to declare a {\f1 TastySyrup} provider explicitly in our module since the framework uses the {\f1 [Inject]} annotated constructor to discover it and automatically add it to our dependency graph! Cool!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Above, we have a simple example of constructor injection in action. Our {\f1 TastySyrup} contains a single {\f1 [Inject]} annotated constructor which our Syrup Injector will use to build it when it\u8217's necessary. Inside our module we have a provider method to make {\f1 Pancakes} (delicious), which requires some {\f1 TastySyrup}. Since we\u8217're using constructor injection, we don\u8217't need to declare a {\f1 TastySyrup} provider explicitly in our module since the framework uses the {\f1 [Inject]} annotated constructor to discover it and automatically add it to our dependency graph! Cool!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     \line
     [Provides]\line
@@ -266,18 +272,21 @@ public class TastySyrup \{\line
     \}\line
 \line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The above is a slightly modified version of our previous example. In this version, our {\f1 TastySyrup} now takes in a familiar parameter, {\f1 TreeSap}. Since we explicitly declare a TreeSap provider in our module we use that to fulfill the {\f1 TreeSap} needed for {\f1 TastySyrup}\u8217's constructor. The {\f1 TastySyrup} is then supplied to our {\f1 Pancakes} provider as normal. If you fail to provide a {\f1 TreeSap} dependency in your module, then your dependency graph will fail validation citing a \u8220"MissingDependency\u8221". A side-effect of providing dependencies to injected constructors this way is that swapping modules can swap concrete types that might be provided to {\f1 TastySyrup}. I.E. one module might provide the {\f1 MapleSap} implementation of {\f1 TreeSap} while another might provide {\f1 WillowSap} (eww).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The above is a slightly modified version of our previous example. In this version, our {\f1 TastySyrup} now takes in a familiar parameter, {\f1 TreeSap}. Since we explicitly declare a TreeSap provider in our module, we use that to fulfill the {\f1 TreeSap} needed for {\f1 TastySyrup}\u8217's constructor. The {\f1 TastySyrup} is then supplied to our {\f1 Pancakes} provider as normal. If you fail to provide a {\f1 TreeSap} dependency in your module, then your dependency graph will fail validation citing a {\f1 MissingDependency}. A side effect of providing dependencies to injected constructors this way is that swapping modules can swap concrete types that might be provided to {\f1 TastySyrup}. I.E., one module might provide the {\f1 MapleSap} implementation of {\f1 TreeSap} while another might provide {\f1 WillowSap} (eww).\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\i (Author\u8217's note: if you find constructor injection confusing still, you\u8217're not alone! In my experience the hardest thing for developers new to DI to grasp is how to trace dependencies provided by constructor injection. As your project grows, you might have constructor injected dependencies accept parameters from other constructor injected dependencies and maybe even some provider methods too\u8230?it can really get out of hand quickly. For this reason alone, I actually prefer to explicitly provide all my dependencies in the modules themselves via providers. That way if I want to trace how a dependency is built I just look at the module and find the associated provider(s) for it and its required types. And this is not just true for USyrup, but also for other frameworks like Dagger/Guice. I must warn you though, other engineers don\u8217't share my enthusiasm for modules as I do)}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 Field and Method Injection\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Field and method injection (also known as members injection) are similar to constructor injection except that return types of injected fields/methods in USyrup are not fed back into USyrup\u8217's dependency graph. What this means is that you can use members injection to feed dependencies into an object {\i only}. It\u8217's a one way relationship!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 Field, Property, and Method Injection\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Field, property, and method injection (also known as members injection) are similar to constructor injection except that return types of injected members in USyrup are not fed back into USyrup\u8217's dependency graph. What this means is that you can use members injection to feed dependencies into an object {\i only}. It\u8217's a one-way relationship!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Members injection is used in two cases in USyrup:\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab As a way to inject dependencies into MonoBehaviours.\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab As a post-step to constructor injection. After an object is constructor injected, any injectable members on the object will also be called.\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab As a post-step to constructor injection. After an object\u8217's constructor is injected, any injectable members on the object will also be called.\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel3 \b \fs24 Injecting MonoBehaviours\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class Pancakes : MonoBehaviour \{\line
-\line
+    \line
     [Inject]\line
     private Butter butter;\line
+    \line
+    [Inject]\line
+    private Fruit FruitProp \{ get; set; \}\line
 \line
     private TastySyrup tastySyrup;\line
 \line
@@ -291,15 +300,35 @@ public class TastySyrup \{\line
         this.tastySyrup = tastySyrup;\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Above is another pancake themed example illustrating how to inject dependencies into a MonoBehaviour. MonoBehaviour\u8217's cannot be instantiated via a traditional constructor, so instead we use both an {\f1 [Inject]} annotated method and field inside the behaviour to pass our dependencies through. Our MonoBehaviour {\f1 Pancakes} (naturally), has a single {\f1 [Inject]} annotated field of type {\f1 Butter} and a single {\f1 [Inject]} annotated method {\f1 Init()} which takes in a {\f1 TastySyrup} object. USyrup will inject fields first followed by methods when performing members injection on an object. In layman\u8217's terms, USyrup will inject all {\f1 Pancakes} MonoBehaviours in our scene with {\f1 Butter} and {\f1 TastySyrup} objects based on the {\f1 [Inject]} annotated members in the MonoBehaviour.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 USyrup automatically detects all {\f1 [Inject]} annotated fields/methods attached to MonoBehaviours within the scene that need to be injected. So as long as you have your Syrup Component/Modules setup, you just need to create a single {\f1 [Inject]} method on your MonoBehaviour and you\u8217're good to go!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Above is another pancake themed example illustrating how to inject dependencies into a MonoBehaviour. MonoBehaviour\u8217's cannot be instantiated via a traditional constructor, so instead we use {\f1 [Inject]} annotated members (field, property, and method) inside the MonoBehaviour to pass our dependencies through. Our MonoBehaviour {\f1 Pancakes} (naturally), has a single {\f1 [Inject]} annotated field of type {\f1 Butter}, a single {\f1 [Inject]} annotated propetty {\f1 Fruit}, and a single {\f1 [Inject]} annotated method {\f1 Init()} which takes in a {\f1 TastySyrup} object. USyrup will inject fields first, followed by propeties, and finally followed by methods when performing members injection on an object. In layperson\u8217's terms, USyrup will inject all {\f1 Pancakes} MonoBehaviours in our scene with {\f1 Butter}, {\f1 Fruit}, and {\f1 TastySyrup} objects based on the {\f1 [Inject]} annotated members in the MonoBehaviour.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 USyrup automatically detects all {\f1 [Inject]} annotated members attached to MonoBehaviours within the scene that need to be injected. So as long as you have your Syrup Component/Modules setup, it\u8217's enough to create a single {\f1 [Inject]} member on your MonoBehaviour, and you\u8217're good to go!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel3 \b \fs24 Property Validation\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Property injection is functionally similar to field injection except that for injected properties USyrup will invoke the property\u8217's setter method. This allows you to create properties with custom validation logic, which can help spot a bad injected value.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class Pancake \{\line
+    \line
+    private Fruit fruit\line
+    \line
+    public Fruit FruitProp \{\line
+        get => fruit;\line
+        set \{\line
+            if (fruit.type == Fruit.Banana) \{\line
+                throw new ArgumentException("I'm not bananas for bananas!");\line
+            \}\line
+            fruit = value;\line
+        \}\line
+    \}\line
+\}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel3 \b \fs24 Constructor Injection Post-Step\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Sometimes, you might want to do some additional work to finish building an object outside of constructor injection. You can do this by also supplying an {\f1 [Inject]} annotated field/method inside the class in addition to an {\f1 [Inject]} annotated constructor. USyrup will always invoke the {\f1 [Inject]} annotated constructor first, followed by injecting the {\f1 [Inject]} annotated member(s), with the order being constructor -> fields -> methods.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class Pancake \{\line
 \line
     //Second, the egg is injected\line
     [Inject]\line
-    public Egg egg\line
+    public Egg egg;\line
+    \line
+    // Third, the fruit is injected\line
+    [Inject]\line
+    public Fruit FruitProp;\line
 \line
     [Inject]\line
     public Pancake(Butter butter) \{\line
@@ -308,11 +337,11 @@ public class TastySyrup \{\line
 \line
     [Inject]\line
     public void Init(TastySyrup tastySyrup) \{\line
-        //Third, this injectable method is called\line
+        //Fourth, this injectable method is called\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel3 \b \fs24 Injection Heirarchies\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 An object can have any number of injectable methods and fields. USyrup will resolve all injectable methods from base class to derived class, so any injectable methods in a base class will be injected first, followed by any subclass(es). This is probably most convenient if you have a MonoBehaviour that derives from another MonoBehaviour that is required to be injected as well. You don\u8217't need to create duplicate {\f1 [Inject]} annotated fields/methods in order to fulfill base class dependencies!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel3 \b \fs24 Injection Hierarchies\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 An object can have any number of injectable members. USyrup will resolve all injectable members from base class to derived class, so any injectable members in a base class will be injected first, followed by any subclass(es). This is probably most convenient if you have a MonoBehaviour that derives from another MonoBehaviour that is required to be injected as well. You don\u8217't need to create duplicate {\f1 [Inject]} annotated members to fulfill base class dependencies!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class Food : MonoBehaviour \{\line
 \line
     [Inject]\line
@@ -338,9 +367,9 @@ public class Waffle : Food \{\line
         this.tastySyrup = tastySyrup;\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Above we have a base class Food which has an {\f1 [Inject]} annotated method {\f1 InitFood()} and an injected {\f1 FoodName} field. Additionally, the {\f1 Waffle} class extends {\f1 Food} and also has its own {\f1 [Inject]} annotated method and field. USyrup will account for this and inject {\f1 Food}\u8217's {\f1 [Inject]} field first then {\f1 Waffle's} field, followed by {\f1 Food}\u8217's method, followed by {\f1 Waffle}\u8217's method. In simple terms, in injection heirarchies, fields from base to deriving class are injected first, followed by methods in the same order.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Above we have a base class Food which has an {\f1 [Inject]} annotated method {\f1 InitFood()} and an injected {\f1 FoodName} field. Additionally, the {\f1 Waffle} class extends {\f1 Food} and also has its own {\f1 [Inject]} annotated method and field. USyrup will account for this and inject {\f1 Food}\u8217's {\f1 [Inject]} field first then {\f1 Waffle's} field, followed by {\f1 Food}\u8217's method, followed by {\f1 Waffle}\u8217's method. In simple terms, in injection hierarchies, fields from base to deriving class are injected first, followed by methods in the same order.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Singleton (Attribute)\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 If you want to reuse the same dependency instantiation across objects that use them you can use the {\f1 [Singleton]} attribute. The {\f1 [Singleton]} atttribute tells USyrup to only ever create one of that dependency. Unlike normal dependencies, singletons are created and cached when the graph is first validated. The {\f1 [Singleton]} attribute itself can be applied to both provider methods and classes. On classes, the attribute only applies for when the dependency is injected via constructor injection. If a provider is declared that overrides an injectable constructor with a {\f1 [Singleton]} attribute, the attribute will be ignored unless it is also applied to the provider method.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 If you want to reuse the same dependency instantiation across objects that use them, you can use the {\f1 [Singleton]} attribute. The {\f1 [Singleton]} attribute tells USyrup to only ever create one instance of that dependency and that instance is injected into all objects that request to {\f1 [Inject]} it. Unlike normal dependencies, singletons are created and cached when the graph is first validated. The {\f1 [Singleton]} attribute itself can be applied to both provider methods and classes. On classes, the attribute only applies for when the dependency is injected via constructor injection. If a provider is declared that overrides an injectable constructor with a {\f1 [Singleton]} attribute, the attribute will be ignored unless it is also applied to the provider method.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     [Provides]\line
     [Singleton]\line
@@ -355,8 +384,58 @@ public class Butter \{\line
     public () \{\}\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The above example shows both uses of the {\f1 [Singleton]} attribute. On the provider, only a single {\f1 TastySyrup} will only be created from that provider method and will be re-used across the dependencies that require it. On the {\f1 Butter} class we annotate the class itself with the {\f1 [Singleton]} attribute to denote that this class should only ever be constructor injected once.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Declarative Bindings\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 In addition to hosting {\f1 Provides} annotated methods, Syrup Modules can also declare injectable objects via declarative bindings in a module\u8217's {\f1 configure()} method. These bindings provide convenient shorthand for declaring injections without using the much wordier {\f1 Provides} method alternative.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+    public void Configure(IBinder binder) \{\line
+        binder.Bind<Pancake>().To<BlueberryPancake>();\line
+    \}\line
+\}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 A good use for declarative bindings is binding abstract types to concrete types. In the above example, {\f1 Pancake} is bound to {\f1 BlueberryPancake}, so any injections asking for a {\f1 Pancake} will receive a {\f1 BlueberryPancake} instance! This is also technically possible with {\f1 Provides} methods, but there are some drawbacks.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+    [Provides]\line
+    public Pancake ProvidesPancake(Blueberry blueberry, TastySyrup tastySyrup) \{\line
+        return new BlueberryPancake(blueberry, tastySyrup);\line
+    \}\line
+\}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Above, we declare a {\f1 Provides} method that returns a concrete {\f1 BlueberryPancake} type. This works, but notice that the {\f1 Blueberry} and {\f1 TastySyrup} objects need to be supplied as arguments to the {\f1 Provides} method directly. I.E., we forgo the ability to inject members of {\f1 BlueberryPancake} and need to construct it directly. In real world Unity usages, most injectable objects are going to be {\f1 MonoBehaviour}s where direct construction is not possible, so declarative bindings allow us to map abstract to concrete types while still enabling injection of those concrete types.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Note:} declarative bound dependencies still need to be provided somewhere as an injectable object, either via an {\f1 Inject} annotated constructor or a {\f1 Provides} annotated method.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 Declarative Semantics\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Declarative bindings have all the same semantics that {\f1 Provides} methods and {\f1 [Inject]} annotated constructors have such as being able to mark those dependencies as {\f1 Singleton} and {\f1 Named}.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+    public void Configure(IBinder binder) \{\line
+        binder.Bind<Pancake>().To<BlueberryPancake>().Named("FunPancakes").AsSingleton();\line
+    \}\line
+\}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Like {\f1 Provides} methods, you can also give the binding an already created instance that\u8217's passed directly into your module.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+    \line
+    [SerializeField]\line
+    private Pancake pancake;\line
+    \line
+    public void Configure(IBinder binder) \{\line
+        binder.Bind<Pancake>().toInstance(pancake)\line
+    \}\line
+\}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 In this case you wouldn\u8217't need to bind {\f1 Pancake} to a concrete subtype as it already has an object provided.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Declarative bindings are flexible, and the same binding can be expressed in many ways.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+    \line
+    public void Configure(IBinder binder) \{\line
+        // Self binds the BlueberryPancake type, useful if BlueberryPancake doesn't declare an `[Inject]` \line
+        // annotated constructor and you have enableAutomaticConstructorSelection set to `true`.\line
+        binder.Bind<BlueberryPancake>()\line
+            \line
+        // You can also use normal semantics with self-binds, like AsSingleton() and Named().\line
+        bind.Bind<BlueberryPancake>().AsSingleton()\line
+            \line
+        // Another way to write binder.Bind<Pancake>().to<BlueberryPancake>()\line
+        binder.Bind<Pancake, BlueberryPancake>()\line
+    \}\line
+\}\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Note:} {\f1 enableAutomaticConstructorSelection} is a useful Syrup Component flag that you can set that will automatically pick any parameterless or default/no-arg constructor declared in an object, even if they aren\u8217't annotated with {\f1 [Inject]} (barring that there is only one such constructor). This flag is only available for declarative bindings!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 SceneInjection (Attribute)\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The {\f1 [SceneInjection]} attributes controls whether or not the object will injected when the scene is loaded. By default, all MonoBehaviours are treated as if {\f1 SceneInjection.enabled} is set to true, even if the {\f1 [SceneInjection]} attribute isn\u8217't declared on the MonoBehaviour itself. When the {\f1 [SceneInjection]} is provided with enabled set to false, then USyrup will skip injecting the MonoBehaviour when the scene is loaded. So outside of being more explicit, the only time you would want to use this attribute is if you wanted to conditionally disable scene injection. You would generally do this for objects that are created at runtime or if you want to rely on on-demand style injection instead.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The {\f1 [SceneInjection]} attributes controls whether the object will be injected when the scene is loaded. By default, all MonoBehaviours are treated as if {\f1 SceneInjection.enabled} is set to {\f1 true}, even if the {\f1 [SceneInjection]} attribute isn\u8217't declared on the MonoBehaviour itself. When the {\f1 [SceneInjection]} attribute is provided with the enabled field set to {\f1 false}, then USyrup will skip injecting the MonoBehaviour when the scene is loaded. So outside of being more explicit, the only time you would want to use this attribute is if you wanted to conditionally disable scene injection. You would generally do this for objects that are created at runtime or if you want to rely on on-demand style injection instead.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 [SceneInjection(enabled: false)]\line
 public class Food : MonoBehaviour \{\line
 \line
@@ -371,10 +450,10 @@ public class Food : MonoBehaviour \{\line
         this.brand = brand;\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 In the above example, the {\f1 Food} object has an injectable {\f1 InitFood()} method. However, we have explicitly disabled scene injection with the attribute {\f1 [SceneInjection(enabled: false)]}. So instead the object fulfills it\u8217's dependency by usng {\f1 SyrupInjector.Get<>()}.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 In the above example, the {\f1 Food} object has an injectable {\f1 InitFood()} method. However, we have explicitly disabled scene injection with the attribute {\f1 [SceneInjection(enabled: false)]}. So instead the object fulfills it\u8217's dependency by using {\f1 SyrupInjector.Get<>()}.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Containers\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 LazyObject Containers\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\f1 LazyObject} containers are special wrapper objects that allow you to inject your objects now, but construct them later. This is useful if you have a dependency that has a long construction time that you want to offload until it\u8217's actually needed. In order to use {\f1 LazyObject} all you need to do is wrap your injected types with the {\f1 LazyObject<>} type at your injection sites.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\f1 LazyObject} containers are special wrapper objects that allow you to inject your objects now, but construct them later. This is useful if you have a dependency that has a long construction time that you want to offload until it\u8217's actually necessary. To use {\f1 LazyObject} all you need to do is wrap your injected types with the {\f1 LazyObject<>} type at your injection sites.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
     \line
     // TastySyrup is provided directly, without being wrapped in an LazyObject\line
@@ -407,20 +486,18 @@ public void PourSyrup() \{\line
 {\pard \ql \f0 \sa180 \li0 \fi0 This is cumbersome to write for obvious reasons, so you can use a shorthand {\f1 new()} on the {\f1 LazyObject} type directly.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 LazyObject<TastySyrup> tastySyrup = new();\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 This creates a new {\f1 LazyObject} containing your desired type directly. However, there are a few drawbacks of this approach that are worth considering:\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab Normally when the injected type is a {\f1 Singleton} then the {\f1 LazyObject} itself is also a {\f1 Singleton}. If you create a {\f1 LazyObject} directly then the {\f1 LazyObject} container obviously won\u8217't be a {\f1 Singleton} if you create multiple manually (but the underlying injected type will still be injected as a {\f1 Singleton}, so don\u8217't worry about that). This could have consequences of adding additional memory usage to your game.\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab When the SyrupInjector builds the dependency graph initially on scene load it will attempt to validate that all requested dependencies in graph are injectable (i.e.\u160?all requested dependencies are provided somewhere). If you construct a {\f1 LazyObject} manually you won\u8217't get this kind of protection as your object you want to inject might actually be missing a required dependency. In these cases you will be met with a a {\f1 MissingDependencyException} instead at injection time, which can be later in your application\u8217's lifecycle than desired.\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab Normally, when the injected type is a {\f1 Singleton} then the {\f1 LazyObject} itself is also a {\f1 Singleton}. If you create a {\f1 LazyObject} directly (as shown above) then the {\f1 LazyObject} container won\u8217't be a {\f1 Singleton}, but the underlying injected type will be. This could have consequences of adding additional memory usage to your game when creating multiple {\f1 LazyObject} containers of the same nominal injected type.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab When the SyrupInjector builds the dependency graph initially on the initial scene load, it will attempt to validate that all requested dependencies in the graph are injectable (i.e., all requested dependencies are provided somewhere). If you construct a {\f1 LazyObject} manually you won\u8217't get this kind of protection as your object you want to inject might actually be missing a required dependency. In these cases you will be met with a runtime {\f1 MissingDependencyException} instead at injection time, which can be later in your application\u8217's lifecycle than desired.\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 For these above reasons, it\u8217's not recommended to use {\f1 new()} to construct your {\f1 LazyObject}s unless you have a good reason to.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Syrup Component\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The Syrup Component is a MonoBehaviour that sits in your scene(s) and holds your Syrup Modules. On {\f1 Awake()}, the Syrup Component loads all Syrup Modules that are also attached to the same game object as itself and builds/validates your dependency graph. On {\f1 Start()} all MonoBehaviours in your scene with {\f1 [Inject]} annotated methods will be injected. Any other MonoBehaviour that is either also attached to the same game object as the Syrup Component or attached to a game object that is a child of the Syrup Component game object will not be injected. This is because it is assumed that these objects will either be full-formed or can easily be formed by hand inside your Syrup Module directly.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The Syrup Component itself has the following tunable parameters:\par}
 {
 \trowd \trgaph120
-\clbrdrb\brdrs\cellx2715\clbrdrb\brdrs\cellx5430\clbrdrb\brdrs\cellx8145\clbrdrb\brdrs\cellx8638
+\clbrdrb\brdrs\cellx1053\clbrdrb\brdrs\cellx1474\clbrdrb\brdrs\cellx8638
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Parameter\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Required\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Type\par}
 \cell}
@@ -430,12 +507,10 @@ public void PourSyrup() \{\line
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx2715\cellx5430\cellx8145\cellx8638
+\cellx1053\cellx1474\cellx8638
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Scenes To Inject\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 False\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 List<String>}\par}
 \cell}
@@ -445,42 +520,36 @@ public void PourSyrup() \{\line
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx2715\cellx5430\cellx8145\cellx8638
+\cellx1053\cellx1474\cellx8638
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Use Scene Injection\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 True\par}
-\cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 bool}\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Flag that indicates whether or not the Syrup Component should inject objects when the scene loads. By default this is set to true. This flag is useful if you don\u8217't want to use scene injection at all and don\u8217't want to add the {\f1 [SceneInjection(enabled: false)]} attribute to every object\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Flag that indicates whether or not the Syrup Component should inject objects when the scene loads. Default: {\f1 true}. This flag is useful if you don\u8217't want to use scene injection at all and don\u8217't want to add the {\f1 [SceneInjection(enabled: false)]} attribute to every object\par}
 \cell}
 }
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx2715\cellx5430\cellx8145\cellx8638
+\cellx1053\cellx1474\cellx8638
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Verbose Logging\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 True\par}
-\cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 bool}\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Flag that controls how verbose the console logging by should be for the Syrup Component and the Syrup Injector created by the component. By default this is set to false.\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Flag that controls how verbose the console logging by should be for the Syrup Component and the Syrup Injector created by the component. Default: {\f1 false}\par}
 \cell}
 }
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx2715\cellx5430\cellx8145\cellx8638
+\cellx1053\cellx1474\cellx8638
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Inject in Awake\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 True\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 bool}\par}
 \cell}
@@ -488,9 +557,22 @@ public void PourSyrup() \{\line
 \cell}
 }
 \intbl\row}
+{
+\trowd \trgaph120
+\cellx1053\cellx1474\cellx8638
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Enable Automatic Constructor Selection\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 bool}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Flag that controls whether or not declarative bindings can automatically select an empty/parameterless constructor if it exists. Default: {\f1 false}.\par}
+\cell}
+}
+\intbl\row}
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Syrup Injector\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The Syrup Injector lives within the Syrup Component. It is responsible for building the dependency graph and fetching/caching any dependencies as they are needed. It is created on first scene load and is destroyed in {\f1 OnDestroy()} when the scene transitions (meaning your dependencies are recreated between scenes). The Syrup Injector is a singleton and any new Syrup Components and Modules added to your scene will be added directly to the currently active Syrup Injector.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The Syrup Injector lives within the Syrup Component. It is responsible for building the dependency graph and fetching/caching any dependencies as they are needed. It is created on the first scene load and is destroyed in {\f1 OnDestroy()} when the scene transitions (meaning your dependencies are recreated between scenes). The Syrup Injector is a singleton, and any new Syrup Components and Modules added to your scene will be added directly to the currently active Syrup Injector.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 If you need to, you can fetch dependencies directly from the Syrup Injector on your Syrup Component via static calls to the {\f1 SyrupInjector} property in the {\f1 SyrupComponent} class. You can use the Syrup Injector to fetch both unnamed and named dependencies using the {\f1 GetInstance<>()} and {\f1 GetInstance<>(string name)} methods respectively.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 //Get's an instance of the TastySyrup object supplied by the Syrup Injector.\line
 TastySyrup tastySyrup = SyrupComponent.SyrupInjector.GetInstance<>();\line
@@ -498,7 +580,7 @@ TastySyrup tastySyrup = SyrupComponent.SyrupInjector.GetInstance<>();\line
 //Get's the named Milk dependency called "LactoseFreeMilk" from the Syrup Injector\line
 Milk milk = SyrupComponent.SyrupInjector.GetInstance<>("LactoseFreeMilk")l\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 On-Demand Injection\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 For convenience, the Syrup Injector can also be used to inject any object on-demand using the {\f1 SyrupInjector.Inject(T objectToInject)} API. This is useful for scenarios where the object to be injected is created at runtime and is not available to be injected during the Syrup Component\u8217's initial inject on scene load step. It also means for this scenario you can use normal {\f1 [Inject]} semantics instead of needing to rely on {\f1 SyrupInjector.GetInstance()} calls to fulfill your objects dependencies.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 For convenience, the Syrup Injector can also be used to inject any object on-demand using the {\f1 SyrupInjector.Inject(T objectToInject)} API. This is useful for scenarios where the object to be injected is created at runtime and is not able to be injected during the Syrup Component\u8217's initial inject on scene load step. It also means for this scenario you can use normal {\f1 [Inject]} semantics instead of needing to rely on {\f1 SyrupInjector.GetInstance()} calls to fulfill your object\u8217's dependencies.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 //This is an example WITHOUT using on-demand injection\line
 public class Breakfast : MonoBehaviour \{\line
 \line
@@ -507,9 +589,9 @@ public class Breakfast : MonoBehaviour \{\line
     private Bacon bacon;\line
 \line
     private void Start() \{\line
-        this.syrup = SyrupComponent.SyrupInjector.Get<Syrup>();\line
-        this.pancakes = SyrupComponent.SyrupInjector.Get<Pancakes>();\line
-        this.bacon = SyrupComponent.SyrupInjector.Get<Bacon>();\line
+        this.syrup = SyrupComponent.SyrupInjector.GetInstance<Syrup>();\line
+        this.pancakes = SyrupComponent.SyrupInjector.GetInstance<Pancakes>();\line
+        this.bacon = SyrupComponent.SyrupInjector.GetInstance<Bacon>();\line
     \}\line
 \}\line
 \line
@@ -531,7 +613,7 @@ public class Breakfast : MonoBehaviour \{\line
         this.bacon = bacon;\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The above examples show the {\f1 Breakfast} class implemented in two ways. The first way using {\f1 SyrupInjector.GetInstance()} to fulfill the {\f1 Breakfast} class\u8217' dependencies and a second way using {\f1 SyrupInjector.Inject(this)}. Using the second method, the SyrupInjector will call back into the {\f1 Breakfast} class and invoke it\u8217's injectable {\f1 InitBreakfast()} method with the dependencies it needs to provide. As can be seen, one way is not strictly better than the other as both can be used to accomplish the same goal.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The above examples show the {\f1 Breakfast} class implemented in two ways. The first way using {\f1 SyrupInjector.GetInstance()} to fulfill the {\f1 Breakfast} class\u8217' dependencies and a second way using {\f1 SyrupInjector.Inject(this)}. Using the second method, the SyrupInjector will call back into the {\f1 Breakfast} class and invoke it\u8217's injectable {\f1 InitBreakfast()} method with the dependencies it needs to provide. As can be seen, one way is not strictly better than the other as both can be used to achieve the same goal.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Caveats\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 By default, USyrup builds the dependency graph during the {\f1 Awake()} step and injects your MonoBehaviours during {\f1 Start()}. This means when the scene loads you shouldn\u8217't expect any dependencies to be available to use in your MonoBehaviours until at least {\f1 Start()}. However, the Syrup Component\u8217's default script execution order is set to {\f1 -900} meaning this is true only for scene injection and not on-demand injection. During {\f1 Awake()} you can on-demand inject any dependency, however, be mindful they may not be fully initialized yet (particularly important for injected MonoBehaviours) as their own {\f1 Awake()} step may not have run.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Alternatively, if you build your own Syrup Injector outside the Syrup Component context via:\par}
@@ -543,20 +625,20 @@ public class Breakfast : MonoBehaviour \{\line
 {\pard \ql \f0 \sa180 \li0 \fi0 Then your injections are not bound to the Syrup Component\u8217's execution order, you can inject immediately. (but this doesn\u8217't really work within the context of MonoBehaviours/Unity and isn\u8217't as efficient as relying on the Syrup Component elsewhere in your scene).\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Where is \u8216'X\u8217' dependency injection framework feature?\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 USyrup is meant to be {\i SIMPLE}! In the interest of simplicity (and time) only the most basic dependency injection features were implemented. This is a very opinonated viewpoint as I, (the author), only ever really use these features anyway.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 If you feel strongly the framework can really benefit from having \u8216'X\u8217' feature, feel free to make a request!\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 My personal take has always been however, \u8220"just because a framework/tool provides a number of features doesn\u8217't mean you need to or should use {\i ALL} of them!\u8221"\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 If you feel strongly, the framework can really benefit from having \u8216'X\u8217' feature, feel free to make a request!\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 My personal take has always been, however, \u8220"just because a framework/tool provides a number of features doesn\u8217't mean you need to or should use {\i ALL} of them!\u8221"\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Why the name \u8220"Syrup\u8221"?\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Three reasons:\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab The framework was heavily inspired by both Guice/Dagger. Since it\u8217's runtime dependency injection, similar to Guice, I chose a name with a similar foodish connotation. The alternative name was Dirk (a type of dagger)\u8230?but maybe that can be saved for a compile time variant of this framework if I ever make it.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab The framework was heavily inspired by both Guice/Dagger. Since it\u8217's a runtime dependency injection framework, similar to Guice, I chose a name with a similar food-ish connotation. The alternative name was Dirk (a type of dagger)\u8230?but maybe that can be saved for a compile time variant of this framework if I ever make it.\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab I have a sneaking suspicion this framework probably isn\u8217't the fastest DI framework out there (syrup is viscous).\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab I get a chuckle out of thinking about injecting syrup into things. Delicious.\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab I get a chuckle out of thinking about injecting syrup into things. Delicious!\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Development Documentation\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The documentation below this point is for myself so I remember the process on how to update the Unity Asset.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The documentation below this point is for myself, so I remember the process on how to update the Unity Asset.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Updating the Built-In Unity Documentation\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 As per Unity guidelines, documentation needs to ship with each asset inside the source directory. The guidelines also disallow using markdown as the documentation format\u8230?so instead of duplicating the docs here we use {\f1 pandoc} to convert this markdown file into an RTF file and then place that file inside our source.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 As per Unity guidelines, documentation needs to ship with each asset inside the source directory. The guidelines also disallow using Markdown as the documentation format\u8230?so instead of duplicating the docs here we use {\f1 pandoc} to convert this Markdown file into an RTF file and then place that file inside our source.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 You can get pandoc via Homebrew:\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 brew install pandoc\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Once you have made your doc changes you can run the documentation_generate script under the Assets/ folder.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Once you have made your doc changes, you can run the documentation_generate script under the Assets/ folder.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \f1 ./documentation_generate.sh\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 This will overwrite the existing generated docs and drop them in the correct directory. Note: the doc images won\u8217't crosslink properly in the RTF file, this is okay!\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Uploading a New Asset Store Version\par}
