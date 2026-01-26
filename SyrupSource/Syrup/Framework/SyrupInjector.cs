@@ -788,9 +788,7 @@ namespace Syrup.Framework {
 
             for (int i = 0; i < SceneManager.sceneCount; i++) {
                 Scene scene = SceneManager.GetSceneAt(i);
-                if (scene.isLoaded) {
-                    SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
-                }
+                SyrupUtils.GetInjectableMonoBehaviours(scene, injectableMonoBehaviours);
             }
 
             InjectGameObjects(injectableMonoBehaviours);

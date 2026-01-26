@@ -7,14 +7,15 @@ using Tests.Framework.TestModules;
 using UnityEngine.TestTools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Text.RegularExpressions;
 using Syrup.Framework.Containers;
 
 public class SyrupComponentTest {
 
     private static string EXAMPLE_SCENE_2 = "ExampleScene2";
     private static string EXAMPLE_SCENE_3 = "ExampleScene3";
-
+    private const string AWAKE_SCENE = "AwakeScene";
+    private const string MUSICAL_MILK_OBJECT = "MusicalMilk";
+    
     [UnitySetUp]
     public IEnumerator UnitySetUp() {
         SyrupComponent.ClearInjector();
@@ -270,7 +271,7 @@ public class SyrupComponentTest {
 
         GameObject sceneComponent = new GameObject();
 
-        // Deactivate so awake doesn't immiedately run injection
+        // Deactivate so awake doesn't immediately run injection
         sceneComponent.SetActive(false);
         sceneComponent.AddComponent<ExampleSyrupModule>();
         sceneComponent.AddComponent<SyrupComponent>();
@@ -285,6 +286,17 @@ public class SyrupComponentTest {
 
         UnityEngine.Object.Destroy(goodPancake);
         UnityEngine.Object.Destroy(sceneComponent);
+    }
+    
+    [UnityTest]
+    public IEnumerator TestSyrupComponent_InjectsOnSceneLoad_WithAwakeInjectionEnabled() {
+        SceneManager.LoadScene(AWAKE_SCENE, LoadSceneMode.Additive);
+        yield return null;
+        
+        MusicalMilk musicalMilk = GameObject.Find(MUSICAL_MILK_OBJECT).GetComponent<MusicalMilk>();
+        Assert.True(musicalMilk.HasAudioSource());
+        
+        yield return SceneManager.UnloadSceneAsync(AWAKE_SCENE);
     }
 
 }

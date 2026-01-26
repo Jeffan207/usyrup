@@ -20,9 +20,6 @@ namespace Syrup.Framework {
         /// </summary>
         /// <param name="injectableMonoBehaviours">List to be populated with injectable MonoBehaviours</param>
         internal static void GetInjectableMonoBehaviours(Scene scene, List<InjectableMonoBehaviour> injectableMonoBehaviours) {
-
-            //Unlike Zenject we inject our dependencies in Start so we can call GetRootGameObjects without worry
-            //You may be thinking we should initialize our GameObjects in Awake and you're probably right, but this is easier.
             foreach (var rootObj in scene.GetRootGameObjects()) {
                 if (rootObj != null) {
                     GetInjectableMonoBehavioursUnderObject(rootObj, injectableMonoBehaviours);
