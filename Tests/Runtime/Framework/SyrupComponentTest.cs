@@ -168,6 +168,21 @@ public class SyrupComponentTest {
 
         UnityEngine.Object.Destroy(sceneComponent);
     }
+    
+    [UnityTest]
+    public IEnumerator TestSyrupModule_ThatExtendsSyrupModuleMonoBehaviour() {
+        GameObject sceneComponent = new GameObject();
+        sceneComponent.AddComponent<SingleProviderMonoBehaviourModule>();
+        sceneComponent.AddComponent<SyrupComponent>();
+
+        TastySyrup syrup = SyrupComponent.SyrupInjector.GetInstance<TastySyrup>();
+
+        Assert.NotNull(syrup);
+
+        yield return null;
+
+        Object.Destroy(sceneComponent);
+    }
 
     [UnityTest]
     public IEnumerator TestSyrupComponent_InjectsWhenSceneInjectionIsExplicitlyEnabled() {

@@ -79,10 +79,10 @@ public class Breakfast : MonoBehaviour {
 }
 ```
 
-2. Create a new module for your scene to house your dependencies. The module must extend the `ISyrupModule` interface and be a `MonoBehaviour`. You can use the example below as a template of how a basic module might look.
+2. Create a new module for your scene to house your dependencies. The module must extend the `SyrupModule` MonoBehaviour. You can use the example below as a template of how a basic module might look.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     [Provides]
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) {
         return new Pancakes(tastySyrup);
@@ -107,10 +107,10 @@ public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
 
 Syrup Modules are the backbone of USyrup. In these modules, you can declare dependencies you wish you explicitly expose to your Syrup Component. USyrup will prioritize providing any dependencies declared here over any dependencies that might be provided via other means (like constructor injection). These modules should be attached to the same game object in your scene that contains a Syrup Component MonoBehaviour.
 
-Modules are simple MonoBehaviours that implement the `ISyrupModule` interface (and empty interface).
+Modules are simple classes that extend the `SyrupModule` MonoBehaviour.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     //This is technically a valid module!
 }
 ```
@@ -122,7 +122,7 @@ A Syrup Component can take in any number of modules and modules themselves can p
 The "Provides" attribute is used within Syrup Modules. Any public method inside a SyrupModule that is annotated with `[Provides]` indicates that the method is to be used to supply dependencies. The type of the dependency provided is determined by return type of the method. These methods are also known as "Provider" methods. A provider method can also provide dependencies to other provider methods, creating a hierarchy of dependencies. Neat!
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     [Provides]
     public Breakfast ProvidesBreakfast(Omelette omelette) {
@@ -148,7 +148,7 @@ These cases can be worked around by using the `[Named]` attribute on provider me
 The following example illustrates this more clearly
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     [Provides]
     public Breakfast ProvidesBobsBreakfast([Named("ScrambledEggs")] EggDish eggDish) {
@@ -200,7 +200,7 @@ The `[Inject]` attribute is the backbone of any DI framework and USyrup is no ex
 Constructor injection is used when you wish for a type to be provided as a dependency without having to explicitly declare it in a provider method in your Syrup Module. Constructor injected objects can take in parameters that may either be explicitly provided in your module or constructor injected themselves. This sounds confusing, because it is, but hopefully the examples below will help illustrate.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     [Provides]
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) {
@@ -223,7 +223,7 @@ public class TastySyrup {
 Above, we have a simple example of constructor injection in action. Our `TastySyrup` contains a single `[Inject]` annotated constructor which our Syrup Injector will use to build it when it's necessary. Inside our module we have a provider method to make `Pancakes` (delicious), which requires some `TastySyrup`. Since we're using constructor injection, we don't need to declare a `TastySyrup` provider explicitly in our module since the framework uses the `[Inject]` annotated constructor to discover it and automatically add it to our dependency graph! Cool!
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     [Provides]
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) {
@@ -377,7 +377,7 @@ Above we have a base class Food which has an `[Inject]` annotated method `InitFo
 If you want to reuse the same dependency instantiation across objects that use them, you can use the `[Singleton]` attribute. The `[Singleton]` attribute tells USyrup to only ever create one instance of that dependency and that instance is injected into all objects that request to `[Inject]` it. Unlike normal dependencies, singletons are created and cached when the graph is first validated. The `[Singleton]` attribute itself can be applied to both provider methods and classes. On classes, the attribute only applies for when the dependency is injected via constructor injection. If a provider is declared that overrides an injectable constructor with a `[Singleton]` attribute, the attribute will be ignored unless it is also applied to the provider method.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     [Provides]
     [Singleton]
     public TastySyrup ProvidesTastySyrup() {
@@ -399,7 +399,7 @@ The above example shows both uses of the `[Singleton]` attribute. On the provide
 In addition to hosting `Provides` annotated methods, Syrup Modules can also declare injectable objects via declarative bindings in a module's `configure()` method. These bindings provide convenient shorthand for declaring injections without using the much wordier `Provides` method alternative.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     public void Configure(IBinder binder) {
         binder.Bind<Pancake>().To<BlueberryPancake>();
     }
@@ -409,7 +409,7 @@ public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
 A good use for declarative bindings is binding abstract types to concrete types. In the above example, `Pancake` is bound to `BlueberryPancake`, so any injections asking for a `Pancake` will receive a `BlueberryPancake` instance! This is also technically possible with `Provides` methods, but there are some drawbacks.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     [Provides]
     public Pancake ProvidesPancake(Blueberry blueberry, TastySyrup tastySyrup) {
         return new BlueberryPancake(blueberry, tastySyrup);
@@ -426,7 +426,7 @@ Above, we declare a `Provides` method that returns a concrete `BlueberryPancake`
 Declarative bindings have all the same semantics that `Provides` methods and `[Inject]` annotated constructors have such as being able to mark those dependencies as `Singleton` and `Named`.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     public void Configure(IBinder binder) {
         binder.Bind<Pancake>().To<BlueberryPancake>().Named("FunPancakes").AsSingleton();
     }
@@ -436,7 +436,7 @@ public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
 Like `Provides` methods, you can also give the binding an already created instance that's passed directly into your module. 
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     [SerializeField]
     private Pancake pancake;
@@ -452,7 +452,7 @@ In this case you wouldn't need to bind `Pancake` to a concrete subtype as it alr
 Declarative bindings are flexible, and the same binding can be expressed in many ways.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     public void Configure(IBinder binder) {
         // Self binds the BlueberryPancake type, useful if BlueberryPancake doesn't declare an `[Inject]` 
@@ -500,7 +500,7 @@ In the above example, the `Food` object has an injectable `InitFood()` method. H
 `LazyObject` containers are special wrapper objects that allow you to inject your objects now, but construct them later. This is useful if you have a dependency that has a long construction time that you want to offload until it's actually necessary. To use `LazyObject` all you need to do is wrap your injected types with the `LazyObject<>` type at your injection sites.
 
 ```c#
-public class ExampleSyrupModule : MonoBehaviour, ISyrupModule {
+public class ExampleSyrupModule : SyrupModule {
     
     // TastySyrup is provided directly, without being wrapped in an LazyObject
     [Provides]
@@ -640,10 +640,6 @@ SyrupInjector syrupInjector = new SyrupInjector(
 ```
 
 Then your injections are not bound to the Syrup Component's execution order, you can inject immediately. (but this doesn't really work within the context of MonoBehaviours/Unity and isn't as efficient as relying on the Syrup Component elsewhere in your scene).
-
-## Known Issues
-
-* Enabling the "Inject in Awake" option on the Syrup Component will break Syrup Modules that utilize the `Awake()` method. Their `Provider` methods will be invoked before their `Awake()` method has a chance to execute. This can be fixed by manually updating the Syrup Module's execution order in **Project Settings > Script Execution Order** and setting their order to `-901` (before the Syrup Component on the list). This bug is being tracked here: https://github.com/Jeffan207/usyrup/issues/25
 
 ## Where is 'X' dependency injection framework feature?
 

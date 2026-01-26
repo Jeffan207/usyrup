@@ -3,10 +3,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Syrup.Framework {
+    [DefaultExecutionOrder(-900)]
     public class SyrupComponent : MonoBehaviour {
 
         /// <summary>
-        /// A singleton SyrupInjector thats managed by the SyrupComponent class. If multiple SyrupComponents are loaded
+        /// A singleton SyrupInjector that's managed by the SyrupComponent class. If multiple SyrupComponents are loaded
         /// into the same scene they will use the same SyrupInjector to load their modules into. If the scene is ended
         /// the SyrupInjector is destroyed.
         /// </summary>
@@ -31,11 +32,7 @@ namespace Syrup.Framework {
 
         [SerializeField]
         [Tooltip("Allows Syrup Component to start injecting in the Awake method instead of the Start method. " +
-                 "This way you will be able to use the injected objects in methods like OnEnable. If you are utilizing " +
-                 "the Awake method within your Syrup Modules you must update their script execution order to run before " +
-                 "the Syrup Component. Otherwise, their Awake methods won't run before their Provider methods are injected! " +
-                 "Go to Project Settings > Script Execution Order and set the individual Syrup Module's execution order to -901 " +
-                 "(just above Syrup Component on the list).")]
+                 "This way you will be able to use the injected objects in methods like OnEnable.")]
         private bool injectInAwake = false;
 
         [SerializeField]

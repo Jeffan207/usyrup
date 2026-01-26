@@ -2,10 +2,13 @@ using Syrup.Framework;
 using Syrup.Framework.Attributes;
 using UnityEngine;
 
-public class ExampleAwakeSyrupModule : MonoBehaviour, ISyrupModule {
-
-    [SerializeField]
+public class ExampleAwakeSyrupModule : SyrupModule {
+    
     private AudioSource audioSource;
+
+    private void Awake() {
+        audioSource = GetComponent<AudioSource>();
+    }
     
     [Provides]
     public AudioSource ProvidesAudioSource() {

@@ -2,6 +2,12 @@
 using Syrup.Framework.Declarative;
 
 namespace Syrup.Framework {
+    
+    /// <summary>
+    /// NOTE: Prefer extending <see cref="SyrupModule"/> directly instead of directly implementing this interface!
+    /// The SyrupModule MonoBehaviour is configured to run with the appropriate script execution order, otherwise,
+    /// inject in awake won't function correctly.
+    /// </summary>
     public interface ISyrupModule {
         /// <summary>
         ///     Configure the module using a binder.
