@@ -34,19 +34,7 @@ namespace Syrup.Framework {
             }
 
             var monoBehaviours = gameObject.GetComponents<MonoBehaviour>();
-
-            for (int i = 0; i < monoBehaviours.Length; i++) {
-                var monoBehaviour = monoBehaviours[i];
-
-                //MonoBehaviours under our SyrupModules are not injectable as they're assumed to be fully formed.
-                //I.E. they're supposed to be MonoBehaviours that are returned by a ProviderMethod.
-                //TODO: enable implicit providing of MonoBehaviours under our module (and then figure out when to inject
-                //them before fulfilling our other dependencies)
-                if (monoBehaviour != null && monoBehaviour.GetType().IsAssignableFrom(typeof(ISyrupModule))) {
-                    return;
-                }
-            }
-
+            
             // Recurse first so it adds components bottom up though it shouldn't really matter much
             // because it should always inject in the dependency order
             for (int i = 0; i < gameObject.transform.childCount; i++) {
