@@ -147,8 +147,8 @@ Unity Asset Store
         this.pancakes = pancakes;\line
     \}\line
 \}\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab Create a new module for your scene to house your dependencies. The module must extend the {\f1 ISyrupModule} interface and be a {\f1 MonoBehaviour}. You can use the example below as a template of how a basic module might look.\sa180\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab Create a new module for your scene to house your dependencies. The module must extend the {\f1 SyrupModule} MonoBehaviour. You can use the example below as a template of how a basic module might look.\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     [Provides]\line
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) \{\line
         return new Pancakes(tastySyrup);\line
@@ -165,14 +165,14 @@ Unity Asset Store
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Features\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Modules (Syrup Modules)\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Syrup Modules are the backbone of USyrup. In these modules, you can declare dependencies you wish you explicitly expose to your Syrup Component. USyrup will prioritize providing any dependencies declared here over any dependencies that might be provided via other means (like constructor injection). These modules should be attached to the same game object in your scene that contains a Syrup Component MonoBehaviour.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Modules are simple MonoBehaviours that implement the {\f1 ISyrupModule} interface (and empty interface).\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 Modules are simple classes that extend the {\f1 SyrupModule} MonoBehaviour.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     //This is technically a valid module!\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 A Syrup Component can take in any number of modules and modules themselves can provide dependencies to other modules, so feel free to break your modules up if they grow too big.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Provides (Attribute)\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The \u8220"Provides\u8221" attribute is used within Syrup Modules. Any public method inside a SyrupModule that is annotated with {\f1 [Provides]} indicates that the method is to be used to supply dependencies. The type of the dependency provided is determined by return type of the method. These methods are also known as \u8220"Provider\u8221" methods. A provider method can also provide dependencies to other provider methods, creating a hierarchy of dependencies. Neat!\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     [Provides]\line
     public Breakfast ProvidesBreakfast(Omelette omelette) \{\line
@@ -190,7 +190,7 @@ Unity Asset Store
 {\pard \ql \f0 \sa180 \li0 \fi0 Sometimes it\u8217's required to have two provider methods that provide dependencies of the same type. Without doing anything else, this scenario will create an ambiguous injection since the Syrup Injector won\u8217't know which provider it should be using.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 These cases can be worked around by using the {\f1 [Named]} attribute on provider methods, along with any human-readable name. Any provider method with this attribute will be disambiguated from other provider methods that have the same return type. In order to use the dependency from this named provider method, you must declare any parameters supplied to other providers/injected constructors with the {\f1 [Named]} attribute as well.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The following example illustrates this more clearly\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     [Provides]\line
     public Breakfast ProvidesBobsBreakfast([Named("ScrambledEggs")] EggDish eggDish) \{\line
@@ -229,7 +229,7 @@ Unity Asset Store
 {\pard \ql \f0 \sa180 \li0 \fi0 The {\f1 [Inject]} attribute is the backbone of any DI framework and USyrup is no exception. Semantically, {\f1 [Inject]} can be used in two similar yet different contexts which we will cover separately. These are: constructor injection and method injection.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 Constructor Injection\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Constructor injection is used when you wish for a type to be provided as a dependency without having to explicitly declare it in a provider method in your Syrup Module. Constructor injected objects can take in parameters that may either be explicitly provided in your module or constructor injected themselves. This sounds confusing, because it is, but hopefully the examples below will help illustrate.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     [Provides]\line
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) \{\line
@@ -249,7 +249,7 @@ public class TastySyrup \{\line
 \line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Above, we have a simple example of constructor injection in action. Our {\f1 TastySyrup} contains a single {\f1 [Inject]} annotated constructor which our Syrup Injector will use to build it when it\u8217's necessary. Inside our module we have a provider method to make {\f1 Pancakes} (delicious), which requires some {\f1 TastySyrup}. Since we\u8217're using constructor injection, we don\u8217't need to declare a {\f1 TastySyrup} provider explicitly in our module since the framework uses the {\f1 [Inject]} annotated constructor to discover it and automatically add it to our dependency graph! Cool!\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     [Provides]\line
     public Pancakes ProvidesPancakes(TastySyrup tastySyrup) \{\line
@@ -370,7 +370,7 @@ public class Waffle : Food \{\line
 {\pard \ql \f0 \sa180 \li0 \fi0 Above we have a base class Food which has an {\f1 [Inject]} annotated method {\f1 InitFood()} and an injected {\f1 FoodName} field. Additionally, the {\f1 Waffle} class extends {\f1 Food} and also has its own {\f1 [Inject]} annotated method and field. USyrup will account for this and inject {\f1 Food}\u8217's {\f1 [Inject]} field first then {\f1 Waffle's} field, followed by {\f1 Food}\u8217's method, followed by {\f1 Waffle}\u8217's method. In simple terms, in injection hierarchies, fields from base to deriving class are injected first, followed by methods in the same order.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Singleton (Attribute)\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 If you want to reuse the same dependency instantiation across objects that use them, you can use the {\f1 [Singleton]} attribute. The {\f1 [Singleton]} attribute tells USyrup to only ever create one instance of that dependency and that instance is injected into all objects that request to {\f1 [Inject]} it. Unlike normal dependencies, singletons are created and cached when the graph is first validated. The {\f1 [Singleton]} attribute itself can be applied to both provider methods and classes. On classes, the attribute only applies for when the dependency is injected via constructor injection. If a provider is declared that overrides an injectable constructor with a {\f1 [Singleton]} attribute, the attribute will be ignored unless it is also applied to the provider method.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     [Provides]\line
     [Singleton]\line
     public TastySyrup ProvidesTastySyrup() \{\line
@@ -386,13 +386,13 @@ public class Butter \{\line
 {\pard \ql \f0 \sa180 \li0 \fi0 The above example shows both uses of the {\f1 [Singleton]} attribute. On the provider, only a single {\f1 TastySyrup} will only be created from that provider method and will be re-used across the dependencies that require it. On the {\f1 Butter} class we annotate the class itself with the {\f1 [Singleton]} attribute to denote that this class should only ever be constructor injected once.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Declarative Bindings\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 In addition to hosting {\f1 Provides} annotated methods, Syrup Modules can also declare injectable objects via declarative bindings in a module\u8217's {\f1 configure()} method. These bindings provide convenient shorthand for declaring injections without using the much wordier {\f1 Provides} method alternative.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     public void Configure(IBinder binder) \{\line
         binder.Bind<Pancake>().To<BlueberryPancake>();\line
     \}\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 A good use for declarative bindings is binding abstract types to concrete types. In the above example, {\f1 Pancake} is bound to {\f1 BlueberryPancake}, so any injections asking for a {\f1 Pancake} will receive a {\f1 BlueberryPancake} instance! This is also technically possible with {\f1 Provides} methods, but there are some drawbacks.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     [Provides]\line
     public Pancake ProvidesPancake(Blueberry blueberry, TastySyrup tastySyrup) \{\line
         return new BlueberryPancake(blueberry, tastySyrup);\line
@@ -402,13 +402,13 @@ public class Butter \{\line
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b Note:} declarative bound dependencies still need to be provided somewhere as an injectable object, either via an {\f1 Inject} annotated constructor or a {\f1 Provides} annotated method.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 Declarative Semantics\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Declarative bindings have all the same semantics that {\f1 Provides} methods and {\f1 [Inject]} annotated constructors have such as being able to mark those dependencies as {\f1 Singleton} and {\f1 Named}.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     public void Configure(IBinder binder) \{\line
         binder.Bind<Pancake>().To<BlueberryPancake>().Named("FunPancakes").AsSingleton();\line
     \}\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Like {\f1 Provides} methods, you can also give the binding an already created instance that\u8217's passed directly into your module.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     [SerializeField]\line
     private Pancake pancake;\line
@@ -419,7 +419,7 @@ public class Butter \{\line
 \}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 In this case you wouldn\u8217't need to bind {\f1 Pancake} to a concrete subtype as it already has an object provided.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Declarative bindings are flexible, and the same binding can be expressed in many ways.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     public void Configure(IBinder binder) \{\line
         // Self binds the BlueberryPancake type, useful if BlueberryPancake doesn't declare an `[Inject]` \line
@@ -454,7 +454,7 @@ public class Food : MonoBehaviour \{\line
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Containers\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel2 \b \fs28 LazyObject Containers\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\f1 LazyObject} containers are special wrapper objects that allow you to inject your objects now, but construct them later. This is useful if you have a dependency that has a long construction time that you want to offload until it\u8217's actually necessary. To use {\f1 LazyObject} all you need to do is wrap your injected types with the {\f1 LazyObject<>} type at your injection sites.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : MonoBehaviour, ISyrupModule \{\line
+{\pard \ql \f0 \sa180 \li0 \fi0 \f1 public class ExampleSyrupModule : SyrupModule \{\line
     \line
     // TastySyrup is provided directly, without being wrapped in an LazyObject\line
     [Provides]\line
