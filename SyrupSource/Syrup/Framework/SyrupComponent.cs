@@ -30,8 +30,12 @@ namespace Syrup.Framework {
         private bool verboseLogging = false;
 
         [SerializeField]
-        [Tooltip("Allows Syrup Component to start injecting in Awake method instead of the Start method. " +
-                 "This way you will be able to use the injected objects in methods like OnEnable.")]
+        [Tooltip("Allows Syrup Component to start injecting in the Awake method instead of the Start method. " +
+                 "This way you will be able to use the injected objects in methods like OnEnable. If you are utilizing " +
+                 "the Awake method within your Syrup Modules you must update their script execution order to run before " +
+                 "the Syrup Component. Otherwise, their Awake methods won't run before their Provider methods are injected! " +
+                 "Go to Project Settings > Script Execution Order and set the individual Syrup Module's execution order to -901 " +
+                 "(just above Syrup Component on the list).")]
         private bool injectInAwake = false;
 
         [SerializeField]

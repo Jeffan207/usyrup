@@ -641,6 +641,10 @@ SyrupInjector syrupInjector = new SyrupInjector(
 
 Then your injections are not bound to the Syrup Component's execution order, you can inject immediately. (but this doesn't really work within the context of MonoBehaviours/Unity and isn't as efficient as relying on the Syrup Component elsewhere in your scene).
 
+## Known Issues
+
+* Enabling the "Inject in Awake" option on the Syrup Component will break Syrup Modules that utilize the `Awake()` method. Their `Provider` methods will be invoked before their `Awake()` method has a chance to execute. This can be fixed by manually updating the Syrup Module's execution order in **Project Settings > Script Execution Order** and setting their order to `-901` (before the Syrup Component on the list). This bug is being tracked here: https://github.com/Jeffan207/usyrup/issues/25
+
 ## Where is 'X' dependency injection framework feature?
 
 USyrup is meant to be *SIMPLE*! In the interest of simplicity (and time) only the most basic dependency injection features were implemented. This is a very opinonated viewpoint as I, (the author), only ever really use these features anyway.
